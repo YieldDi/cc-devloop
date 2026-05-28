@@ -1,10 +1,10 @@
 # cc-devloop 项目进度记录
 
-> 最后更新：2026-05-26 00:00
+> 最后更新：2026-05-27
 > 项目命名：cc-devloop (Claude Code Dev Loop)
 > 项目路径：/Users/txx/Desktop/YieldDi/cc-devloop
 > GitHub：https://github.com/YieldDi/cc-devloop
-> 当前阶段：方案设计完成，待进入 Phase 1 编码
+> 当前阶段：Phase 1 MVP 主体完成，可运行
 
 ---
 
@@ -13,11 +13,25 @@
 | 阶段 | 状态 | 说明 |
 |------|------|------|
 | 方案设计 | ✅ 已完成 | 6 份设计文档已落盘 |
-| Phase 1 MVP 编码 | ⬜ 未开始 | 下一步 |
+| Phase 1 MVP 编码 | ✅ 主体完成 | Tauri+React+Monaco+Agent IPC 已跑通 |
 | Phase 2 V1 | ⬜ 未开始 | - |
 | Phase 3 V2 | ⬜ 未开始 | - |
 
 ## 已完成事项
+
+### 2026-05-27 Phase 1 MVP 编码
+
+- [x] 初始化 Tauri 2.0 项目（React + TypeScript + Vite）
+- [x] 安装全部前端依赖（Tailwind v4, Zustand, Monaco, xterm, Tauri plugins）
+- [x] 三栏布局：Sidebar(240px) | Editor(flex) | Agent Panel(360px)
+- [x] Rust 文件操作 Commands：read_project_tree, read_file, write_file, select_directory
+- [x] FileTree 组件：递归渲染、展开/折叠、文件图标、点击打开
+- [x] Monaco Editor：多 tab、语言自动检测、自动布局
+- [x] Agent Panel：聊天界面、流式输出、Send/Stop 按钮
+- [x] Node.js Agent 进程：stdin/stdout JSON 协议、Rust spawn 管理
+- [x] Agent 流式事件接通：Tauri event → agentStore → React UI
+- [x] 终端面板：xterm.js 集成、可折叠
+- [x] 应用在 Mac 上成功启动运行
 
 ### 2026-05-25 方案设计
 
