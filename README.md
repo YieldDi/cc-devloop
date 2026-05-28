@@ -1,3 +1,5 @@
+**[中文](./README.zh-CN.md)** | English
+
 # cc-devloop
 
 AI-Driven Full-Lifecycle Development Desktop App — powered by Claude Agent SDK.
