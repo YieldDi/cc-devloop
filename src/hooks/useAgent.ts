@@ -69,7 +69,7 @@ export function useAgent() {
       }
 
       case "tool_result":
-        // Tool completed - find the last running tool call with matching info
+        // Tool completed
         if (msg.toolUseId) {
           updateToolCallById(
             msg.toolUseId as string,
@@ -101,6 +101,15 @@ export function useAgent() {
     }
   }
 
+  async function ensureAgentStarted(projectPath: string): Promise<void> {
+    const running = await invoke<boolean>("is_agent_running").catch(() => false);
+    if (running) return;
+
+    await invoke("start_agent", { projectPath });
+    // Wait briefly for the Node.js process to initialize
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
   async function sendMessage(content: string) {
     const { projectRoot } = useProjectStore.getState();
     if (!projectRoot) return;
@@ -121,13 +130,16 @@ export function useAgent() {
     setStreaming(true);
 
     try {
-      await invoke("start_agent", { projectPath: projectRoot });
+      // Ensure agent is started (only starts if not already running)
+      await ensureAgentStarted(projectRoot);
+
+      // Send the actual message
       await invoke("send_agent_message", { content });
     } catch (e) {
       addMessage({
         id: crypto.randomUUID(),
         role: "system",
-        content: `Failed to start agent: ${e}`,
+        content: `Failed: ${e}`,
         timestamp: Date.now(),
       });
       setStreaming(false);

@@ -3,6 +3,12 @@ import { readMessages, writeMessage } from "./bridge.ts";
 
 const projectPath = process.argv[2] || process.cwd();
 
+// Resolve model from env or use default
+const model = process.env.ANTHROPIC_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "claude-sonnet-4-6";
+
+// Signal that the agent process is ready
+writeMessage({ type: "ready" });
+
 readMessages(async (msg) => {
   if (msg.type === "user_message") {
     await handleUserMessage(msg.content);
@@ -21,7 +27,7 @@ async function handleUserMessage(content: string): Promise<void> {
       prompt: content,
       options: {
         cwd: projectPath,
-        model: "claude-sonnet-4-6",
+        model,
         allowedTools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
         permissionMode: "acceptEdits",
         includePartialMessages: true,

@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore, type FileNode } from "../../stores/projectStore";
 import { useEditorStore } from "../../stores/editorStore";
@@ -24,18 +25,31 @@ function FileIcon({ name, isDir }: { name: string; isDir: boolean }) {
 }
 
 function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
-  const { expandedDirs, toggleDir } = useProjectStore();
+  const { expandedDirs, toggleDir, setChildren } = useProjectStore();
   const { openFile } = useEditorStore();
+  const [loading, setLoading] = useState(false);
   const isExpanded = expandedDirs.has(node.path);
 
-  const handleClick = async () => {
+  const handleClick = useCallback(async () => {
     if (node.is_dir) {
+      if (!isExpanded && !node.children) {
+        // Lazy load children on first expand
+        setLoading(true);
+        try {
+          const children = await invoke<FileNode[]>("read_dir_children", { path: node.path });
+          setChildren(node.path, children);
+        } catch (e) {
+          console.error("Failed to load directory:", e);
+        } finally {
+          setLoading(false);
+        }
+      }
       toggleDir(node.path);
     } else {
       const content = await invoke<string>("read_file", { path: node.path });
       openFile(node.path, content, detectLanguage(node.path));
     }
-  };
+  }, [node, isExpanded]);
 
   return (
     <div>
@@ -45,7 +59,9 @@ function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
         onClick={handleClick}
       >
         {node.is_dir && (
-          <span className="text-gray-500 mr-1 text-xs">{isExpanded ? "▾" : "▸"}</span>
+          <span className="text-gray-500 mr-1 text-xs">
+            {loading ? "⟳" : isExpanded ? "▾" : "▸"}
+          </span>
         )}
         <FileIcon name={node.name} isDir={node.is_dir} />
         <span className="truncate">{node.name}</span>

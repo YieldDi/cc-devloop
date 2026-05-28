@@ -1,9 +1,7 @@
-import Editor, { type OnMount } from "@monaco-editor/react";
-import { useRef } from "react";
+import Editor from "@monaco-editor/react";
 import { useEditorStore } from "../../stores/editorStore";
 
 export default function CodeEditor() {
-  const editorRef = useRef<OnMount>(null);
   const { openFiles, activeFilePath, updateContent } = useEditorStore();
 
   const file = activeFilePath ? openFiles.get(activeFilePath) : null;
