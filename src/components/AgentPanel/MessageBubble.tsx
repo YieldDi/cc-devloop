@@ -2,6 +2,7 @@ import type { AgentMessage } from "../../stores/agentStore";
 import { useAgentStore } from "../../stores/agentStore";
 import MarkdownRenderer from "./MarkdownRenderer";
 import ToolCallCard from "./ToolCallCard";
+import { useMemo } from "react";
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -25,15 +26,19 @@ function UserBubble({ message }: { message: AgentMessage }) {
 }
 
 function AssistantBubble({ message }: { message: AgentMessage }) {
-  const toolCalls = useAgentStore((s) => s.getToolCallsForMessage(message.id));
+  const toolCalls = useAgentStore((s) => s.toolCalls);
+  const myToolCalls = useMemo(
+    () => toolCalls.filter((tc) => tc.messageId === message.id),
+    [toolCalls, message.id],
+  );
 
   return (
     <div className="flex justify-start group">
       <div className="max-w-[95%] py-1">
-        <MarkdownRenderer content={message.content} />
-        {toolCalls.length > 0 && (
+        {message.content && <MarkdownRenderer content={message.content} />}
+        {myToolCalls.length > 0 && (
           <div className="mt-2">
-            {toolCalls.map((tc) => (
+            {myToolCalls.map((tc) => (
               <ToolCallCard key={tc.id} toolCall={tc} />
             ))}
           </div>

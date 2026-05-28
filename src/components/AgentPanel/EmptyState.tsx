@@ -1,4 +1,4 @@
-import { useAgent } from "../../hooks/useAgent";
+import { useProjectStore } from "../../stores/projectStore";
 
 const SUGGESTIONS = [
   "Explain the project structure",
@@ -7,7 +7,15 @@ const SUGGESTIONS = [
 ];
 
 export default function EmptyState() {
-  const { sendMessage } = useAgent();
+  const projectRoot = useProjectStore((s) => s.projectRoot);
+
+  const handleClick = (text: string) => {
+    if (!projectRoot) return;
+    // Dispatch a custom event that ChatInput will pick up
+    // We avoid calling useAgent() here because sendMessage needs to be in the same hook tree
+    const event = new CustomEvent("agent-send", { detail: text });
+    window.dispatchEvent(event);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-6">
@@ -20,17 +28,21 @@ export default function EmptyState() {
       <p className="text-xs text-[#6c7086] mb-6">
         Describe what you want to build or ask a question.
       </p>
-      <div className="space-y-2 w-full max-w-[280px]">
-        {SUGGESTIONS.map((s, i) => (
-          <button
-            key={i}
-            onClick={() => sendMessage(s)}
-            className="w-full text-left text-xs text-[#a6adc8] bg-[#313244] hover:bg-[#45475a] rounded-xl px-3 py-2.5 transition-colors border border-transparent hover:border-[#585b70]"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      {projectRoot ? (
+        <div className="space-y-2 w-full max-w-[280px]">
+          {SUGGESTIONS.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => handleClick(s)}
+              className="w-full text-left text-xs text-[#a6adc8] bg-[#313244] hover:bg-[#45475a] rounded-xl px-3 py-2.5 transition-colors border border-transparent hover:border-[#585b70]"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-[#6c7086]">Open a project to get started</p>
+      )}
     </div>
   );
 }

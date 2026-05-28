@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useAgentStore } from "../../stores/agentStore";
 import { useAgent } from "../../hooks/useAgent";
 
 export default function ChatInput() {
-  const { isStreaming } = useAgentStore();
+  const isStreaming = useAgentStore((s) => s.isStreaming);
   const { sendMessage, stopAgent } = useAgent();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
@@ -15,13 +15,23 @@ export default function ChatInput() {
     ta.style.height = Math.min(ta.scrollHeight, 150) + "px";
   };
 
-  const handleSend = () => {
-    const text = value.trim();
-    if (!text) return;
+  const handleSend = (text?: string) => {
+    const msg = (text || value).trim();
+    if (!msg) return;
     setValue("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    sendMessage(text);
+    sendMessage(msg);
   };
+
+  // Listen for suggestion clicks from EmptyState
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const text = (e as CustomEvent).detail as string;
+      handleSend(text);
+    };
+    window.addEventListener("agent-send", handler);
+    return () => window.removeEventListener("agent-send", handler);
+  }, []);
 
   return (
     <div className="px-3 pb-3 pt-2">
@@ -54,7 +64,7 @@ export default function ChatInput() {
             </button>
           ) : (
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!value.trim()}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-[#89b4fa] hover:bg-[#b4befe] disabled:opacity-30 disabled:cursor-not-allowed text-[#11111b] transition-colors"
               title="Send (⌘+Enter)"
