@@ -6,6 +6,16 @@ const projectPath = process.argv[2] || process.cwd();
 // Resolve model from env or use default
 const model = process.env.ANTHROPIC_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "claude-sonnet-4-6";
 
+// Conversation session management
+let currentSessionId: string | null = null;
+let turnCount = 0;
+const MAX_TURNS_WITHOUT_RESET = 20;
+
+const systemPrompt = `You are a senior software engineer working in the project at ${projectPath}.
+You can read, write, and edit files, search code, and run commands.
+When creating files, follow the project's existing patterns and conventions.
+Always explain what you're doing before making changes.`;
+
 // Signal that the agent process is ready
 writeMessage({ type: "ready" });
 
@@ -22,23 +32,53 @@ async function handleUserMessage(content: string): Promise<void> {
     projectPath,
   });
 
+  turnCount++;
+
   try {
+    const queryOptions: Record<string, unknown> = {
+      cwd: projectPath,
+      model,
+      allowedTools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+      permissionMode: "acceptEdits",
+      includePartialMessages: true,
+      maxTurns: 30,
+      systemPrompt,
+    };
+
+    // Resume existing session for context continuity
+    if (currentSessionId && turnCount <= MAX_TURNS_WITHOUT_RESET) {
+      queryOptions.resume = currentSessionId;
+    }
+
+    let lastResult: Record<string, unknown> | null = null;
+
     for await (const message of query({
       prompt: content,
-      options: {
-        cwd: projectPath,
-        model,
-        allowedTools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
-        permissionMode: "acceptEdits",
-        includePartialMessages: true,
-        maxTurns: 30,
-        systemPrompt: `You are a senior software engineer working in the project at ${projectPath}.
-You can read, write, and edit files, search code, and run commands.
-When creating files, follow the project's existing patterns and conventions.
-Always explain what you're doing before making changes.`,
-      },
+      options: queryOptions,
     })) {
-      forwardMessage(message);
+      const msg = message as Record<string, unknown>;
+
+      // Capture session ID from result
+      if (msg.type === "result") {
+        lastResult = msg;
+        const resultSessionId = msg.sessionId as string;
+        if (resultSessionId) {
+          currentSessionId = resultSessionId;
+        }
+      }
+
+      forwardMessage(msg);
+    }
+
+    // If turn limit reached, reset session but keep conversation going
+    if (turnCount >= MAX_TURNS_WITHOUT_RESET) {
+      writeMessage({
+        type: "warning",
+        content: "Session context refreshed to maintain performance",
+      });
+      turnCount = 0;
+      // Don't reset currentSessionId — let next call start fresh
+      currentSessionId = null;
     }
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
