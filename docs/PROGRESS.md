@@ -1,10 +1,10 @@
 # cc-devloop 项目进度记录
 
-> 最后更新：2026-05-27
+> 最后更新：2026-05-28
 > 项目命名：cc-devloop (Claude Code Dev Loop)
 > 项目路径：/Users/txx/Desktop/YieldDi/cc-devloop
 > GitHub：https://github.com/YieldDi/cc-devloop
-> 当前阶段：Phase 1 MVP 主体完成，可运行
+> 当前阶段：Phase 1 MVP 主体完成，代码已推送，待调试 Agent 通信
 
 ---
 
@@ -67,40 +67,29 @@
 | Agent 通信 | 结构化 JSON + stage gate | 阶段间解耦，用户可在每步审查 | 2026-05-25 |
 | 项目命名 | cc-devloop | Claude Code Dev Loop，需求→上线→迭代永不停歇 | 2026-05-25 |
 
-## 下一步行动（Phase 1 MVP 启动）
+## 下一步行动（Phase 1 MVP 调试 + 完善）
 
 按优先级排序：
 
-1. **初始化 Tauri 项目**
-   - `npm create tauri-app@latest`
-   - 选择 React + TypeScript
-   - 配置 Tailwind CSS
+1. **调试 Agent 通信**
+   - Agent 面板发消息后无回复
+   - 检查 agent script 路径解析（Tauri dev 模式下 resource_dir 可能不对）
+   - 检查 Node.js --experimental-strip-types 是否正常工作
+   - 检查 ANTHROPIC_API_KEY 环境变量是否传递到 Node 子进程
 
-2. **搭建基础 UI 框架**
-   - 三栏布局：Sidebar + Editor + Agent Panel
-   - FileTree 组件（读取本地目录）
-   - Monaco Editor 集成（多 tab、语言检测）
+2. **文件树加载优化**
+   - 用户反馈文件读取缓慢
+   - 考虑懒加载（只加载展开的目录）
+   - 减小默认 depth 或增加 loading 状态
 
-3. **实现 Tauri 文件操作 Commands**
-   - `read_project_tree` — 读取目录结构
-   - `read_file` — 读取文件内容
-   - `write_file` — 写入文件
-   - 范围限定在项目根目录
+3. **Agent 操作可视化**
+   - tool_use 调用展示（文件读取/写入/命令执行）
+   - Diff Editor 集成（Agent 修改文件时显示变更）
 
-4. **Node.js sidecar 搭建**
-   - Agent SDK 基础框架
-   - 单个 Coder Agent 定义
-   - 4 个基础 tools：readFile, writeFile, searchCode, runCommand
-   - stdout 输出桥接到 Tauri event
-
-5. **Agent 面板 UI**
-   - 聊天界面（用户输入 + Agent 流式输出）
-   - 工具调用展示
-   - 变更 diff 预览 + 接受/拒绝
-
-6. **嵌入式终端**
-   - xterm.js 集成
-   - Agent 可运行命令，用户也可手动输入
+4. **稳定性打磨**
+   - Agent 进程异常退出时 UI 提示
+   - 文件保存确认流程
+   - 快捷键优化
 
 ## 待讨论/待决策
 
@@ -113,6 +102,13 @@
 ---
 
 ## 更新日志
+
+### 2026-05-28
+- 代码已推送到 GitHub (commit 5c00540)
+- 安装 desktop-commander MCP，获得终端执行能力
+- 确认 MVP 基本可运行，发现两个待修复问题：
+  - Agent 面板发消息无回复（通信链路待调试）
+  - 文件树加载缓慢（待优化）
 
 ### 2026-05-25
 - 项目启动，完成全部方案设计
