@@ -4,17 +4,8 @@ import { useAgentStore } from "../stores/agentStore";
 import { useProjectStore } from "../stores/projectStore";
 
 export function useAgent() {
-  const {
-    addMessage,
-    appendStream,
-    finishStream,
-    setStreaming,
-    addToolCall,
-    updateToolCallById,
-    clearStream,
-  } = useAgentStore.getState();
-
   let unlisten: (() => void) | null = null;
+  let currentMessageId: string | null = null;
 
   async function startListening() {
     if (unlisten) return;
@@ -30,46 +21,38 @@ export function useAgent() {
   }
 
   function handleMessage(msg: Record<string, unknown>) {
+    const { appendStream, finishStream, addMessage, addToolCall, updateToolCallById } =
+      useAgentStore.getState();
+
     switch (msg.type) {
       case "system":
-        // Agent started
         break;
 
       case "stream":
-        // Streaming text token
         if (msg.content) {
           appendStream(msg.content as string);
         }
         break;
 
       case "assistant_text":
-        // Complete text block from assistant
         if (msg.content) {
           appendStream(msg.content as string);
         }
         break;
 
       case "tool_use": {
-        const toolId = crypto.randomUUID();
         addToolCall({
-          id: toolId,
+          id: crypto.randomUUID(),
+          messageId: currentMessageId ?? undefined,
           name: (msg.name as string) || "unknown",
           input: (msg.input as Record<string, unknown>) || {},
           status: "running",
+          timestamp: Date.now(),
         });
-        // Also show in stream
-        const toolName = msg.name as string;
-        const toolInput = msg.input as Record<string, unknown>;
-        let toolHint = `🔧 ${toolName}`;
-        if (toolInput.path) toolHint += ` → ${toolInput.path}`;
-        else if (toolInput.command) toolHint += ` → ${toolInput.command}`;
-        else if (toolInput.pattern) toolHint += ` → ${toolInput.pattern}`;
-        appendStream(`\n${toolHint}\n`);
         break;
       }
 
       case "tool_result":
-        // Tool completed
         if (msg.toolUseId) {
           updateToolCallById(
             msg.toolUseId as string,
@@ -87,6 +70,7 @@ export function useAgent() {
 
       case "done":
         finishStream();
+        currentMessageId = null;
         break;
 
       case "error":
@@ -97,6 +81,7 @@ export function useAgent() {
           timestamp: Date.now(),
         });
         finishStream();
+        currentMessageId = null;
         break;
     }
   }
@@ -106,7 +91,6 @@ export function useAgent() {
     if (running) return;
 
     await invoke("start_agent", { projectPath });
-    // Wait briefly for the Node.js process to initialize
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
@@ -114,26 +98,26 @@ export function useAgent() {
     const { projectRoot } = useProjectStore.getState();
     if (!projectRoot) return;
 
-    // Add user message to chat
+    const { addMessage, clearStream, setStreaming } = useAgentStore.getState();
+
+    // Track the message ID for tool call association
+    const msgId = crypto.randomUUID();
+    currentMessageId = msgId;
+
     addMessage({
-      id: crypto.randomUUID(),
+      id: msgId,
       role: "user",
       content,
       timestamp: Date.now(),
     });
 
-    // Start listening for events
     await startListening();
 
-    // Reset stream
     clearStream();
     setStreaming(true);
 
     try {
-      // Ensure agent is started (only starts if not already running)
       await ensureAgentStarted(projectRoot);
-
-      // Send the actual message
       await invoke("send_agent_message", { content });
     } catch (e) {
       addMessage({
@@ -143,10 +127,12 @@ export function useAgent() {
         timestamp: Date.now(),
       });
       setStreaming(false);
+      currentMessageId = null;
     }
   }
 
   async function stopAgent() {
+    const { finishStream } = useAgentStore.getState();
     try {
       await invoke("stop_agent");
     } catch {
@@ -157,6 +143,7 @@ export function useAgent() {
       unlisten = null;
     }
     finishStream();
+    currentMessageId = null;
   }
 
   return { sendMessage, stopAgent, startListening };

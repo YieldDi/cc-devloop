@@ -9,10 +9,12 @@ export interface AgentMessage {
 
 export interface ToolCallInfo {
   id: string;
+  messageId?: string;
   name: string;
   input: Record<string, unknown>;
   output?: string;
   status: "running" | "completed" | "error";
+  timestamp: number;
 }
 
 interface AgentStore {
@@ -27,10 +29,11 @@ interface AgentStore {
   addToolCall: (tc: ToolCallInfo) => void;
   updateToolCallById: (id: string, output: string, status: ToolCallInfo["status"]) => void;
   clearStream: () => void;
+  getToolCallsForMessage: (messageId: string) => ToolCallInfo[];
   reset: () => void;
 }
 
-export const useAgentStore = create<AgentStore>((set) => ({
+export const useAgentStore = create<AgentStore>((set, get) => ({
   messages: [],
   isStreaming: false,
   currentStream: "",
@@ -75,6 +78,9 @@ export const useAgentStore = create<AgentStore>((set) => ({
     })),
 
   clearStream: () => set({ currentStream: "" }),
+
+  getToolCallsForMessage: (messageId) =>
+    get().toolCalls.filter((tc) => tc.messageId === messageId),
 
   reset: () =>
     set({ messages: [], isStreaming: false, currentStream: "", toolCalls: [] }),

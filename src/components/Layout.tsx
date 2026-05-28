@@ -21,9 +21,9 @@ export default function Layout() {
   };
 
   return (
-    <div className="grid grid-cols-[240px_1fr_360px] h-screen bg-[#1e1e2e] text-white">
+    <div className="grid grid-cols-[240px_1fr_360px] h-screen overflow-hidden bg-[#1e1e2e] text-white">
       {/* Sidebar */}
-      <div className="flex flex-col border-r border-white/5 bg-[#181825]">
+      <div className="flex flex-col h-full overflow-hidden border-r border-white/5 bg-[#181825]">
         <div className="p-2 border-b border-white/5">
           <button
             onClick={handleOpenProject}
@@ -41,9 +41,9 @@ export default function Layout() {
       </div>
 
       {/* Editor Area */}
-      <div className="flex flex-col min-w-0">
+      <div className="flex flex-col h-full min-w-0 overflow-hidden">
         <EditorTabs />
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <CodeEditor />
         </div>
         {/* Terminal toggle */}
@@ -64,13 +64,8 @@ export default function Layout() {
       </div>
 
       {/* Agent Panel */}
-      <div className="flex flex-col border-l border-white/5 bg-[#181825]">
-        <div className="px-3 py-2 border-b border-white/5 text-sm font-medium text-gray-300">
-          🤖 Agent
-        </div>
-        <div className="flex-1 min-h-0">
-          <ChatPanel />
-        </div>
+      <div className="flex flex-col h-full overflow-hidden border-l border-white/5 bg-[#181825]">
+        <ChatPanel />
       </div>
     </div>
   );
