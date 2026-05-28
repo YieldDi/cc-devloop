@@ -4,9 +4,15 @@ import { useAgentStore } from "../stores/agentStore";
 import { useProjectStore } from "../stores/projectStore";
 
 export function useAgent() {
-  const { addMessage, appendStream, finishStream, setStreaming, addToolCall } =
-    useAgentStore.getState();
-  const { projectRoot } = useProjectStore.getState();
+  const {
+    addMessage,
+    appendStream,
+    finishStream,
+    setStreaming,
+    addToolCall,
+    updateToolCallById,
+    clearStream,
+  } = useAgentStore.getState();
 
   let unlisten: (() => void) | null = null;
 
@@ -16,56 +22,90 @@ export function useAgent() {
     unlisten = await listen<string>("agent:message", (event) => {
       try {
         const msg = JSON.parse(event.payload);
-
-        switch (msg.type) {
-          case "stream":
-            if (msg.content) {
-              appendStream(msg.content as string);
-            }
-            break;
-
-          case "tool_use":
-            addToolCall({
-              name: msg.name as string,
-              input: (msg.input as Record<string, unknown>) || {},
-              status: "running",
-            });
-            break;
-
-          case "tool_result":
-            useAgentStore
-              .getState()
-              .updateToolCall(
-                msg.name as string,
-                msg.output as string,
-                "completed",
-              );
-            break;
-
-          case "done":
-            finishStream();
-            break;
-
-          case "error":
-            addMessage({
-              id: crypto.randomUUID(),
-              role: "system",
-              content: `Error: ${msg.content}`,
-              timestamp: Date.now(),
-            });
-            setStreaming(false);
-            break;
-        }
+        handleMessage(msg);
       } catch {
         // ignore parse errors
       }
     });
   }
 
+  function handleMessage(msg: Record<string, unknown>) {
+    switch (msg.type) {
+      case "system":
+        // Agent started
+        break;
+
+      case "stream":
+        // Streaming text token
+        if (msg.content) {
+          appendStream(msg.content as string);
+        }
+        break;
+
+      case "assistant_text":
+        // Complete text block from assistant
+        if (msg.content) {
+          appendStream(msg.content as string);
+        }
+        break;
+
+      case "tool_use": {
+        const toolId = crypto.randomUUID();
+        addToolCall({
+          id: toolId,
+          name: (msg.name as string) || "unknown",
+          input: (msg.input as Record<string, unknown>) || {},
+          status: "running",
+        });
+        // Also show in stream
+        const toolName = msg.name as string;
+        const toolInput = msg.input as Record<string, unknown>;
+        let toolHint = `🔧 ${toolName}`;
+        if (toolInput.path) toolHint += ` → ${toolInput.path}`;
+        else if (toolInput.command) toolHint += ` → ${toolInput.command}`;
+        else if (toolInput.pattern) toolHint += ` → ${toolInput.pattern}`;
+        appendStream(`\n${toolHint}\n`);
+        break;
+      }
+
+      case "tool_result":
+        // Tool completed - find the last running tool call with matching info
+        if (msg.toolUseId) {
+          updateToolCallById(
+            msg.toolUseId as string,
+            (msg.content as string) || "",
+            "completed",
+          );
+        }
+        break;
+
+      case "warning":
+        if (msg.content) {
+          appendStream(`\n⚠️ ${msg.content}\n`);
+        }
+        break;
+
+      case "done":
+        finishStream();
+        break;
+
+      case "error":
+        addMessage({
+          id: crypto.randomUUID(),
+          role: "system",
+          content: `❌ Error: ${msg.content}`,
+          timestamp: Date.now(),
+        });
+        finishStream();
+        break;
+    }
+  }
+
   async function sendMessage(content: string) {
+    const { projectRoot } = useProjectStore.getState();
     if (!projectRoot) return;
 
-    // Add user message
+    // Add user message to chat
     addMessage({
       id: crypto.randomUUID(),
       role: "user",
@@ -73,12 +113,14 @@ export function useAgent() {
       timestamp: Date.now(),
     });
 
-    // Start listening if not already
+    // Start listening for events
     await startListening();
 
-    // Start agent if not running
+    // Reset stream
+    clearStream();
+    setStreaming(true);
+
     try {
-      setStreaming(true);
       await invoke("start_agent", { projectPath: projectRoot });
       await invoke("send_agent_message", { content });
     } catch (e) {
@@ -102,7 +144,7 @@ export function useAgent() {
       unlisten();
       unlisten = null;
     }
-    setStreaming(false);
+    finishStream();
   }
 
   return { sendMessage, stopAgent, startListening };

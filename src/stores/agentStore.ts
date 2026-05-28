@@ -5,10 +5,10 @@ export interface AgentMessage {
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
-  toolCalls?: ToolCallInfo[];
 }
 
 export interface ToolCallInfo {
+  id: string;
   name: string;
   input: Record<string, unknown>;
   output?: string;
@@ -25,7 +25,8 @@ interface AgentStore {
   finishStream: () => void;
   setStreaming: (v: boolean) => void;
   addToolCall: (tc: ToolCallInfo) => void;
-  updateToolCall: (name: string, output: string, status: ToolCallInfo["status"]) => void;
+  updateToolCallById: (id: string, output: string, status: ToolCallInfo["status"]) => void;
+  clearStream: () => void;
   reset: () => void;
 }
 
@@ -41,30 +42,40 @@ export const useAgentStore = create<AgentStore>((set) => ({
     set((s) => ({ currentStream: s.currentStream + token })),
 
   finishStream: () =>
-    set((s) => ({
-      messages: [
-        ...s.messages,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: s.currentStream,
-          timestamp: Date.now(),
-        },
-      ],
-      currentStream: "",
-      isStreaming: false,
-    })),
+    set((s) => {
+      const streamContent = s.currentStream.trim();
+      const newMessages = streamContent
+        ? [
+            ...s.messages,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant" as const,
+              content: streamContent,
+              timestamp: Date.now(),
+            },
+          ]
+        : s.messages;
+      return {
+        messages: newMessages,
+        currentStream: "",
+        isStreaming: false,
+      };
+    }),
 
   setStreaming: (v) => set({ isStreaming: v }),
 
-  addToolCall: (tc) => set((s) => ({ toolCalls: [...s.toolCalls, tc] })),
+  addToolCall: (tc) =>
+    set((s) => ({ toolCalls: [...s.toolCalls, tc] })),
 
-  updateToolCall: (name, output, status) =>
+  updateToolCallById: (id, output, status) =>
     set((s) => ({
       toolCalls: s.toolCalls.map((tc) =>
-        tc.name === name ? { ...tc, output, status } : tc,
+        tc.id === id ? { ...tc, output, status } : tc,
       ),
     })),
 
-  reset: () => set({ messages: [], isStreaming: false, currentStream: "", toolCalls: [] }),
+  clearStream: () => set({ currentStream: "" }),
+
+  reset: () =>
+    set({ messages: [], isStreaming: false, currentStream: "", toolCalls: [] }),
 }));
