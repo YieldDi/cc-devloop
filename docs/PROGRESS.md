@@ -4,7 +4,7 @@
 > 项目命名：cc-devloop (Claude Code Dev Loop)
 > 项目路径：/Users/txx/Desktop/YieldDi/cc-devloop
 > GitHub：https://github.com/YieldDi/cc-devloop
-> 当前阶段：Phase 1 MVP 主体完成，代码已推送，待调试 Agent 通信
+> 当前阶段：Phase 1 MVP — Agent 通信修复 + 文件树懒加载已完成，待集成测试
 
 ---
 
@@ -18,6 +18,17 @@
 | Phase 3 V2 | ⬜ 未开始 | - |
 
 ## 已完成事项
+
+### 2026-05-28 Phase 1 MVP 修复与优化
+
+- [x] 修复 Agent 通信链路：路径多策略解析、环境变量传递、启动/发送分离
+- [x] 文件树改为懒加载（点击展开时才读取子目录）
+- [x] 新增 Rust 命令：read_dir_children, read_project_tree_full, is_agent_running
+- [x] agent model 从环境变量 ANTHROPIC_MODEL 读取（适配代理端点）
+- [x] 修复 TypeScript 编译错误
+- [x] 生成中英文 README 并推送
+- [ ] 集成测试：验证 Agent 能否正常对话
+- [ ] Diff Editor 集成
 
 ### 2026-05-27 Phase 1 MVP 编码
 
