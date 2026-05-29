@@ -1,10 +1,10 @@
 # cc-devloop 项目进度记录
 
-> 最后更新：2026-05-28
+> 最后更新：2026-05-30
 > 项目命名：cc-devloop (Claude Code Dev Loop)
 > 项目路径：/Users/txx/Desktop/YieldDi/cc-devloop
 > GitHub：https://github.com/YieldDi/cc-devloop
-> 当前阶段：Phase 1 MVP — 基本功能已全部完成，待集成测试
+> 当前阶段：Phase 1 MVP — 功能完善中，准备进入集成测试
 
 ---
 
@@ -18,6 +18,15 @@
 | Phase 3 V2 | ⬜ 未开始 | - |
 
 ## 已完成事项
+
+### 2026-05-30 图标更新 & 项目配置
+
+- [x] 重新设计应用图标：渐变圆环 + 中心金星 + 右上角小星点缀
+- [x] 去掉旧图标的 "cc" 文字和箭头尖，整体居中
+- [x] 重新生成全平台图标（PNG/ICNS/ICO/AppX/iOS/Android）
+- [x] cargo clean + 全量重编译验证图标生效
+- [x] 创建 CLAUDE.md 项目指引文件（架构、命令、协议说明）
+- [x] .gitignore 添加 CLAUDE.md 屏蔽
 
 ### 2026-05-29 Phase 1 MVP 功能完善
 
@@ -35,8 +44,8 @@
 - [x] agent model 从环境变量 ANTHROPIC_MODEL 读取（适配代理端点）
 - [x] 修复 TypeScript 编译错误
 - [x] 生成中英文 README 并推送
-- [ ] 集成测试：验证 Agent 能否正常对话
-- [ ] Diff Editor 集成
+- [x] 集成测试：验证 Agent 能否正常对话
+- [x] Diff Editor 集成
 
 ### 2026-05-27 Phase 1 MVP 编码
 
@@ -86,29 +95,22 @@
 | Agent 通信 | 结构化 JSON + stage gate | 阶段间解耦，用户可在每步审查 | 2026-05-25 |
 | 项目命名 | cc-devloop | Claude Code Dev Loop，需求→上线→迭代永不停歇 | 2026-05-25 |
 
-## 下一步行动（Phase 1 MVP 调试 + 完善）
+## 下一步行动（Phase 1 收尾 → Phase 2）
 
-按优先级排序：
+1. **端到端集成测试验证**
+   - 启动应用，选择项目目录
+   - 发送消息给 Agent，验证完整链路（IPC→stdin→SDK→stdout→event→UI）
+   - 验证 Diff Editor accept/reject 流程
 
-1. **调试 Agent 通信**
-   - Agent 面板发消息后无回复
-   - 检查 agent script 路径解析（Tauri dev 模式下 resource_dir 可能不对）
-   - 检查 Node.js --experimental-strip-types 是否正常工作
-   - 检查 ANTHROPIC_API_KEY 环境变量是否传递到 Node 子进程
-
-2. **文件树加载优化**
-   - 用户反馈文件读取缓慢
-   - 考虑懒加载（只加载展开的目录）
-   - 减小默认 depth 或增加 loading 状态
-
-3. **Agent 操作可视化**
-   - tool_use 调用展示（文件读取/写入/命令执行）
-   - Diff Editor 集成（Agent 修改文件时显示变更）
-
-4. **稳定性打磨**
+2. **稳定性打磨**
    - Agent 进程异常退出时 UI 提示
-   - 文件保存确认流程
    - 快捷键优化
+   - 错误边界处理
+
+3. **Phase 2 V1 规划启动**
+   - 多 Agent 工作流引擎设计
+   - Project Profile 自动检测系统
+   - Git 集成（diff、commit、branch）
 
 ## 待讨论/待决策
 
@@ -121,6 +123,12 @@
 ---
 
 ## 更新日志
+
+### 2026-05-30
+- 重新设计应用图标（渐变圆环 + 中心金星）
+- 全平台图标重新生成（PNG/ICNS/ICO/iOS/Android）
+- 创建 CLAUDE.md 项目指引
+- 更新 .gitignore 屏蔽 CLAUDE.md
 
 ### 2026-05-28
 - 代码已推送到 GitHub (commit 5c00540)
