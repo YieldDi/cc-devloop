@@ -120,6 +120,7 @@ function forwardMessage(msg: unknown): void {
       if (block.type === "tool_use") {
         writeMessage({
           type: "tool_use",
+          id: block.id as string,
           name: block.name as string,
           input: block.input as Record<string, unknown>,
         });

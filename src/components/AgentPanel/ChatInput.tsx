@@ -3,11 +3,20 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useAgentStore } from "../../stores/agentStore";
 import { useProjectStore } from "../../stores/projectStore";
+import { useEditorStore } from "../../stores/editorStore";
+
+const FILE_WRITE_TOOLS = new Set(["Write", "Edit"]);
+
+function getToolPath(name: string, input: Record<string, unknown>): string | null {
+  if (input.path) return input.path as string;
+  if (input.file_path) return input.file_path as string;
+  return null;
+}
 
 let currentMessageId: string | null = null;
 let listenerSetup = false;
-// Track Tauri listener for cleanup
 let _unlistenFn: (() => void) | null = null;
+const pendingFileChanges = new Map<string, string>(); // toolUseId → filePath
 
 export default function ChatInput() {
   const isStreaming = useAgentStore((s) => s.isStreaming);
@@ -177,27 +186,54 @@ function handleEventMessage(msg: Record<string, unknown>) {
     case "assistant_text":
       if (msg.content) appendStream(msg.content as string);
       break;
-    case "tool_use":
+    case "tool_use": {
+      const toolName = (msg.name as string) || "unknown";
+      const toolInput = (msg.input as Record<string, unknown>) || {};
+      const toolId = msg.id as string;
+
       addToolCall({
-        id: crypto.randomUUID(),
+        id: toolId || crypto.randomUUID(),
         messageId: currentMessageId ?? undefined,
-        name: (msg.name as string) || "unknown",
-        input: (msg.input as Record<string, unknown>) || {},
+        name: toolName,
+        input: toolInput,
         status: "running",
         timestamp: Date.now(),
       });
-      break;
-    case "tool_result":
-      if (msg.toolUseId) {
-        updateToolCallById(msg.toolUseId as string, (msg.content as string) || "", "completed");
+
+      // Track file-changing tools for auto-refresh
+      if (FILE_WRITE_TOOLS.has(toolName) && toolId) {
+        const filePath = getToolPath(toolName, toolInput);
+        if (filePath) {
+          pendingFileChanges.set(toolId, filePath);
+        }
       }
       break;
+    }
+    case "tool_result": {
+      const toolUseId = msg.toolUseId as string;
+      if (toolUseId) {
+        updateToolCallById(toolUseId, (msg.content as string) || "", "completed");
+      }
+
+      // Handle file change from tracked tool
+      const changedFile = toolUseId ? pendingFileChanges.get(toolUseId) : undefined;
+      if (changedFile) {
+        pendingFileChanges.delete(toolUseId);
+        handleFileChange(changedFile);
+      }
+      break;
+    }
     case "warning":
       if (msg.content) appendStream(`\n⚠️ ${msg.content}\n`);
       break;
     case "done":
       finishStream();
       currentMessageId = null;
+      // Flush any remaining pending file changes
+      for (const [, filePath] of pendingFileChanges) {
+        handleFileChange(filePath);
+      }
+      pendingFileChanges.clear();
       break;
     case "error":
       addMessage({
@@ -209,5 +245,30 @@ function handleEventMessage(msg: Record<string, unknown>) {
       finishStream();
       currentMessageId = null;
       break;
+  }
+}
+
+function handleFileChange(filePath: string) {
+  // 1. Refresh the file in the editor if it's open
+  useEditorStore.getState().refreshFile(filePath);
+
+  // 2. Refresh the file tree
+  const { projectRoot, refreshDir, refreshRoot, expandedDirs, toggleDir } = useProjectStore.getState();
+  if (projectRoot) {
+    const lastSep = Math.max(filePath.lastIndexOf("/"), filePath.lastIndexOf("\\"));
+    const parentDir = filePath.substring(0, lastSep);
+    const inProject = parentDir === projectRoot || parentDir.startsWith(projectRoot + "/") || parentDir.startsWith(projectRoot + "\\");
+    if (parentDir && inProject) {
+      if (parentDir === projectRoot) {
+        // File is directly in project root — refresh the root tree
+        refreshRoot();
+      } else {
+        // File is in a subdirectory — refresh that directory
+        if (!expandedDirs.has(parentDir)) {
+          toggleDir(parentDir);
+        }
+        refreshDir(parentDir);
+      }
+    }
   }
 }

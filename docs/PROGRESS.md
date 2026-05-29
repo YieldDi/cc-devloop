@@ -19,6 +19,17 @@
 
 ## 已完成事项
 
+### 2026-05-30 文件树自动刷新 & Agent 修复
+
+- [x] 修复 Agent 写入文件后文件树不自动刷新的问题
+  - 根因：ChatInput.tsx 有独立的 agent 消息处理，绕过了 useAgent hook
+  - ChatInput 的 tool_use 处理缺少 id 透传（用 randomUUID 替代了真实 id），导致 tool_result 匹配不上
+  - 文件在项目根目录时 parentDir === projectRoot，refreshDir 找不到树节点
+- [x] ChatInput.tsx 添加完整的文件变更追踪逻辑（pendingFileChanges map）
+- [x] projectStore.refreshRoot 改为增量合并，保留已展开目录的 children
+- [x] projectStore.refreshDir 增加回退注入逻辑，处理目录首次展开场景
+- [x] agent/index.ts 补充 tool_use 消息的 id 字段转发
+
 ### 2026-05-30 图标更新 & 项目配置
 
 - [x] 重新设计应用图标：渐变圆环 + 中心金星 + 右上角小星点缀
@@ -26,7 +37,7 @@
 - [x] 重新生成全平台图标（PNG/ICNS/ICO/AppX/iOS/Android）
 - [x] cargo clean + 全量重编译验证图标生效
 - [x] 创建 CLAUDE.md 项目指引文件（架构、命令、协议说明）
-- [x] .gitignore 添加 CLAUDE.md 屏蔽
+- [x] Agent 写文件后自动刷新 FileTree（首次实现，后发现走错路径）
 
 ### 2026-05-29 Phase 1 MVP 功能完善
 
@@ -128,7 +139,10 @@
 - 重新设计应用图标（渐变圆环 + 中心金星）
 - 全平台图标重新生成（PNG/ICNS/ICO/iOS/Android）
 - 创建 CLAUDE.md 项目指引
-- 更新 .gitignore 屏蔽 CLAUDE.md
+- 修复 Agent 写入文件后文件树不自动刷新
+  - 修复 ChatInput.tsx tool_use id 未透传问题
+  - 修复 parentDir === projectRoot 时 refreshDir 无效问题
+  - refreshRoot 改为增量合并保留已展开子树
 
 ### 2026-05-28
 - 代码已推送到 GitHub (commit 5c00540)

@@ -61,9 +61,12 @@ export function useAgent() {
       case "tool_use": {
         const toolName = (msg.name as string) || "unknown";
         const toolInput = (msg.input as Record<string, unknown>) || {};
+        const toolId = msg.id as string;
 
-        // Generate a stable ID we can track
-        const toolId = crypto.randomUUID();
+        if (!toolId) {
+          console.warn("[Agent] tool_use missing id, cannot track file changes");
+          break;
+        }
 
         addToolCall({
           id: toolId,
@@ -77,6 +80,7 @@ export function useAgent() {
         // Track file-changing tools for auto-refresh
         if (FILE_WRITE_TOOLS.has(toolName)) {
           const filePath = getToolPath(toolName, toolInput);
+          console.log("[Agent] file write tool detected, name:", toolName, "filePath:", filePath, "toolId:", toolId);
           if (filePath) {
             pendingFileChanges.set(toolId, filePath);
           }
@@ -86,6 +90,7 @@ export function useAgent() {
 
       case "tool_result": {
         const toolUseId = msg.toolUseId as string;
+        console.log("[Agent] tool_result, toolUseId:", toolUseId, "pending keys:", [...pendingFileChanges.keys()]);
         updateToolCallById(
           toolUseId,
           (msg.content as string) || "",
@@ -94,6 +99,7 @@ export function useAgent() {
 
         // If this was a file-changing tool, trigger refresh and create diff
         const changedFile = pendingFileChanges.get(toolUseId);
+        console.log("[Agent] changedFile from pending:", changedFile);
         if (changedFile) {
           pendingFileChanges.delete(toolUseId);
 
@@ -116,6 +122,7 @@ export function useAgent() {
             });
           } else {
             // File not open — just refresh the tree
+            console.log("[Agent] calling handleFileChange for:", changedFile);
             handleFileChange(changedFile);
           }
         }
@@ -154,16 +161,28 @@ export function useAgent() {
 
   /** Handle a file change detected from agent tool use */
   function handleFileChange(filePath: string) {
+    console.log("[Agent] handleFileChange called with:", filePath);
     // 1. Refresh the file in the editor if it's open
     const { refreshFile } = useEditorStore.getState();
     refreshFile(filePath);
 
     // 2. Refresh the parent directory in the file tree
-    const { projectRoot, refreshDir } = useProjectStore.getState();
+    const { projectRoot, refreshDir, expandedDirs, toggleDir } = useProjectStore.getState();
+    console.log("[Agent] projectRoot:", projectRoot, "expandedDirs:", [...expandedDirs]);
     if (projectRoot) {
-      const parentDir = filePath.substring(0, filePath.lastIndexOf("/"));
-      if (parentDir && parentDir.startsWith(projectRoot)) {
+      const lastSep = Math.max(filePath.lastIndexOf("/"), filePath.lastIndexOf("\\"));
+      const parentDir = filePath.substring(0, lastSep);
+      console.log("[Agent] parentDir:", parentDir);
+      if (parentDir && (parentDir === projectRoot || parentDir.startsWith(projectRoot + "/") || parentDir.startsWith(projectRoot + "\\"))) {
+        // Ensure the parent dir is expanded so the new file is visible
+        if (!expandedDirs.has(parentDir)) {
+          console.log("[Agent] expanding parentDir:", parentDir);
+          toggleDir(parentDir);
+        }
+        console.log("[Agent] refreshing dir:", parentDir);
         refreshDir(parentDir);
+      } else {
+        console.log("[Agent] parentDir check failed, parentDir:", parentDir, "projectRoot:", projectRoot);
       }
     }
   }

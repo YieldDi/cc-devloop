@@ -74,7 +74,7 @@ function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
 }
 
 export default function FileTree() {
-  const { tree } = useProjectStore();
+  const { tree, refreshRoot } = useProjectStore();
 
   if (tree.length === 0) {
     return (
@@ -86,6 +86,15 @@ export default function FileTree() {
 
   return (
     <div className="overflow-auto flex-1">
+      <div className="flex justify-end px-1 py-0.5 border-b border-white/5">
+        <button
+          onClick={() => refreshRoot()}
+          className="text-xs text-gray-500 hover:text-white px-1.5 py-0.5 hover:bg-white/5 rounded"
+          title="Refresh file tree"
+        >
+          ⟳
+        </button>
+      </div>
       {tree.map((node) => (
         <TreeNode key={node.path} node={node} depth={0} />
       ))}

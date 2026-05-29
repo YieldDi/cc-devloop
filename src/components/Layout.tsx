@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "../stores/projectStore";
 import { useEditorStore } from "../stores/editorStore";
@@ -10,10 +10,17 @@ import ChatPanel from "./AgentPanel/ChatPanel";
 import TerminalPanel from "./Terminal/Terminal";
 
 export default function Layout() {
-  const { projectRoot, setProjectRoot, setTree } = useProjectStore();
+  const { projectRoot, tree, setProjectRoot, setTree, refreshRoot } = useProjectStore();
   const { activeDiffId, pendingDiffs, acceptDiff, rejectDiff, setActiveDiff } =
     useEditorStore();
   const [showTerminal, setShowTerminal] = useState(false);
+
+  // Auto-restore tree when projectRoot is persisted but tree is empty
+  useEffect(() => {
+    if (projectRoot && tree.length === 0) {
+      refreshRoot();
+    }
+  }, [projectRoot]);
 
   const handleOpenProject = async () => {
     const path = await invoke<string | null>("select_directory");
