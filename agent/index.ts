@@ -1,13 +1,15 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readMessages, writeMessage } from "./bridge.ts";
+import { randomUUID } from "crypto";
 
 const projectPath = process.argv[2] || process.cwd();
 
 // Resolve model from env or use default
 const model = process.env.ANTHROPIC_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "claude-sonnet-4-6";
 
-// Conversation session management
-let currentSessionId: string | null = null;
+// Use a session ID for the lifetime of this agent process
+let sessionId = randomUUID();
+let isFirstQuery = true;
 let turnCount = 0;
 const MAX_TURNS_WITHOUT_RESET = 20;
 
@@ -35,6 +37,8 @@ async function handleUserMessage(content: string): Promise<void> {
   turnCount++;
 
   try {
+    // On first call: just set sessionId so the SDK creates a named session
+    // On subsequent calls: resume the session for context continuity
     const queryOptions: Record<string, unknown> = {
       cwd: projectPath,
       model,
@@ -45,40 +49,29 @@ async function handleUserMessage(content: string): Promise<void> {
       systemPrompt,
     };
 
-    // Resume existing session for context continuity
-    if (currentSessionId && turnCount <= MAX_TURNS_WITHOUT_RESET) {
-      queryOptions.resume = currentSessionId;
+    if (isFirstQuery) {
+      // First message: create the session with our fixed ID
+      queryOptions.sessionId = sessionId;
+      isFirstQuery = false;
+    } else if (turnCount <= MAX_TURNS_WITHOUT_RESET) {
+      // Subsequent messages: resume the existing session
+      queryOptions.resume = sessionId;
+    } else {
+      // Too many turns: start a fresh session
+      sessionId = randomUUID();
+      queryOptions.sessionId = sessionId;
+      turnCount = 0;
+      writeMessage({
+        type: "warning",
+        content: "Session context refreshed to maintain performance",
+      });
     }
-
-    let lastResult: Record<string, unknown> | null = null;
 
     for await (const message of query({
       prompt: content,
       options: queryOptions,
     })) {
-      const msg = message as Record<string, unknown>;
-
-      // Capture session ID from result
-      if (msg.type === "result") {
-        lastResult = msg;
-        const resultSessionId = msg.sessionId as string;
-        if (resultSessionId) {
-          currentSessionId = resultSessionId;
-        }
-      }
-
-      forwardMessage(msg);
-    }
-
-    // If turn limit reached, reset session but keep conversation going
-    if (turnCount >= MAX_TURNS_WITHOUT_RESET) {
-      writeMessage({
-        type: "warning",
-        content: "Session context refreshed to maintain performance",
-      });
-      turnCount = 0;
-      // Don't reset currentSessionId — let next call start fresh
-      currentSessionId = null;
+      forwardMessage(message);
     }
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
@@ -95,7 +88,6 @@ function forwardMessage(msg: unknown): void {
     const event = m.event as Record<string, unknown>;
     if (!event) return;
 
-    // Stream text tokens
     if (event.type === "content_block_delta") {
       const delta = event.delta as Record<string, unknown>;
       if (delta?.type === "text_delta" && delta.text) {
@@ -103,7 +95,6 @@ function forwardMessage(msg: unknown): void {
       }
     }
   } else if (m.type === "assistant") {
-    // Complete assistant message - extract tool uses
     const message = m.message as Record<string, unknown>;
     if (!message) return;
 
@@ -125,7 +116,6 @@ function forwardMessage(msg: unknown): void {
       }
     }
   } else if (m.type === "user") {
-    // Tool results
     const message = m.message as Record<string, unknown>;
     if (!message) return;
 
@@ -144,7 +134,6 @@ function forwardMessage(msg: unknown): void {
       }
     }
   } else if (m.type === "result") {
-    // Final result
     const subtype = m.subtype as string;
     if (subtype === "error_max_turns" || subtype === "error_during_execution") {
       writeMessage({
