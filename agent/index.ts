@@ -1,24 +1,23 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { readMessages, writeMessage } from "./bridge.ts";
-import { randomUUID } from "crypto";
 
 const projectPath = process.argv[2] || process.cwd();
 
-// Resolve model from env or use default
 const model = process.env.ANTHROPIC_MODEL || process.env.ANTHROPIC_DEFAULT_SONNET_MODEL || "claude-sonnet-4-6";
 
-// Use a session ID for the lifetime of this agent process
-let sessionId = randomUUID();
-let isFirstQuery = true;
-let turnCount = 0;
-const MAX_TURNS_WITHOUT_RESET = 20;
+// Conversation history for context management
+// We track messages and replay them as the prompt
+interface ConversationEntry {
+  role: "user" | "assistant";
+  content: string;
+}
+const conversationHistory: ConversationEntry[] = [];
 
 const systemPrompt = `You are a senior software engineer working in the project at ${projectPath}.
 You can read, write, and edit files, search code, and run commands.
 When creating files, follow the project's existing patterns and conventions.
 Always explain what you're doing before making changes.`;
 
-// Signal that the agent process is ready
 writeMessage({ type: "ready" });
 
 readMessages(async (msg) => {
@@ -34,48 +33,64 @@ async function handleUserMessage(content: string): Promise<void> {
     projectPath,
   });
 
-  turnCount++;
+  // Build prompt with conversation context
+  let prompt: string;
+  if (conversationHistory.length === 0) {
+    prompt = content;
+  } else {
+    // Include conversation history in the prompt for context
+    const historyStr = conversationHistory
+      .map((entry) => `${entry.role === "user" ? "User" : "Assistant"}: ${entry.content}`)
+      .join("\n\n");
+    prompt = `Previous conversation:\n${historyStr}\n\nUser: ${content}`;
+  }
+
+  let assistantText = "";
 
   try {
-    // On first call: just set sessionId so the SDK creates a named session
-    // On subsequent calls: resume the session for context continuity
-    const queryOptions: Record<string, unknown> = {
-      cwd: projectPath,
-      model,
-      allowedTools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
-      permissionMode: "acceptEdits",
-      includePartialMessages: true,
-      maxTurns: 30,
-      systemPrompt,
-    };
-
-    if (isFirstQuery) {
-      // First message: create the session with our fixed ID
-      queryOptions.sessionId = sessionId;
-      isFirstQuery = false;
-    } else if (turnCount <= MAX_TURNS_WITHOUT_RESET) {
-      // Subsequent messages: resume the existing session
-      queryOptions.resume = sessionId;
-    } else {
-      // Too many turns: start a fresh session
-      sessionId = randomUUID();
-      queryOptions.sessionId = sessionId;
-      turnCount = 0;
-      writeMessage({
-        type: "warning",
-        content: "Session context refreshed to maintain performance",
-      });
-    }
-
     for await (const message of query({
-      prompt: content,
-      options: queryOptions,
+      prompt,
+      options: {
+        cwd: projectPath,
+        model,
+        allowedTools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"],
+        permissionMode: "acceptEdits",
+        includePartialMessages: true,
+        maxTurns: 30,
+        systemPrompt,
+      },
     })) {
       forwardMessage(message);
+
+      // Capture assistant text for history
+      const m = message as Record<string, unknown>;
+      if (m.type === "assistant") {
+        const msg = m.message as Record<string, unknown>;
+        if (msg) {
+          const contentBlocks = msg.content as Array<Record<string, unknown>>;
+          if (contentBlocks) {
+            for (const block of contentBlocks) {
+              if (block.type === "text" && block.text) {
+                assistantText += block.text;
+              }
+            }
+          }
+        }
+      }
     }
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     writeMessage({ type: "error", content: errorMsg });
+  }
+
+  // Save to conversation history (keep last 10 turns = 20 messages)
+  conversationHistory.push({ role: "user", content });
+  if (assistantText) {
+    conversationHistory.push({ role: "assistant", content: assistantText });
+  }
+  // Trim to prevent context from growing too large
+  while (conversationHistory.length > 20) {
+    conversationHistory.shift();
   }
 
   writeMessage({ type: "done" });
