@@ -4,9 +4,13 @@ import { useAgent } from "../../hooks/useAgent";
 
 export default function ChatInput() {
   const isStreaming = useAgentStore((s) => s.isStreaming);
+  const currentStream = useAgentStore((s) => s.currentStream);
   const { sendMessage, stopAgent } = useAgent();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
+
+  // If streaming is stuck (no content for a while), allow sending
+  const effectivelyStreaming = isStreaming && currentStream.length > 0;
 
   const adjustHeight = () => {
     const ta = textareaRef.current;
@@ -54,7 +58,7 @@ export default function ChatInput() {
           }}
         />
         <div className="flex items-center pr-2 pb-2">
-          {isStreaming ? (
+          {effectivelyStreaming ? (
             <button
               onClick={stopAgent}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-[#f38ba8] hover:bg-[#eba0ac] text-[#11111b] transition-colors"

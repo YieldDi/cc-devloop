@@ -172,6 +172,10 @@ export function useAgent() {
     const running = await invoke<boolean>("is_agent_running").catch(() => false);
     if (running) return;
 
+    // Agent not running — make sure streaming state is clean
+    const { setStreaming } = useAgentStore.getState();
+    setStreaming(false);
+
     await invoke("start_agent", { projectPath });
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
