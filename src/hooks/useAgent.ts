@@ -170,19 +170,38 @@ export function useAgent() {
 
   async function ensureAgentStarted(projectPath: string): Promise<void> {
     const running = await invoke<boolean>("is_agent_running").catch(() => false);
-    if (running) return;
+    if (running) {
+      console.log("[Agent] Already running");
+      return;
+    }
 
     // Agent not running — make sure streaming state is clean
     const { setStreaming } = useAgentStore.getState();
     setStreaming(false);
 
-    await invoke("start_agent", { projectPath });
+    console.log("[Agent] Starting agent at", projectPath);
+    try {
+      const result = await invoke<string>("start_agent", { projectPath });
+      console.log("[Agent] Start result:", result);
+    } catch (e) {
+      console.error("[Agent] Start failed:", e);
+      throw e;
+    }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
   async function sendMessage(content: string) {
     const { projectRoot } = useProjectStore.getState();
-    if (!projectRoot) return;
+    if (!projectRoot) {
+      const { addMessage } = useAgentStore.getState();
+      addMessage({
+        id: crypto.randomUUID(),
+        role: "system",
+        content: "Please open a project first (click 'Open Project' in the sidebar)",
+        timestamp: Date.now(),
+      });
+      return;
+    }
 
     const { addMessage, clearStream, setStreaming } = useAgentStore.getState();
 
@@ -205,10 +224,12 @@ export function useAgent() {
       await ensureAgentStarted(projectRoot);
       await invoke("send_agent_message", { content });
     } catch (e) {
+      const errMsg = `Failed: ${e}`;
+      console.error("[Agent]", errMsg);
       addMessage({
         id: crypto.randomUUID(),
         role: "system",
-        content: `Failed: ${e}`,
+        content: errMsg,
         timestamp: Date.now(),
       });
       setStreaming(false);

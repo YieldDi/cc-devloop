@@ -1,16 +1,38 @@
 import { useRef, useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useAgentStore } from "../../stores/agentStore";
-import { useAgent } from "../../hooks/useAgent";
+import { useProjectStore } from "../../stores/projectStore";
+
+let currentMessageId: string | null = null;
+let listenerSetup = false;
+// Track Tauri listener for cleanup
+let _unlistenFn: (() => void) | null = null;
 
 export default function ChatInput() {
   const isStreaming = useAgentStore((s) => s.isStreaming);
   const currentStream = useAgentStore((s) => s.currentStream);
-  const { sendMessage, stopAgent } = useAgent();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [value, setValue] = useState("");
 
-  // If streaming is stuck (no content for a while), allow sending
   const effectivelyStreaming = isStreaming && currentStream.length > 0;
+
+  // Set up Tauri event listener once
+  useEffect(() => {
+    if (listenerSetup) return;
+    listenerSetup = true;
+
+    listen<string>("agent:message", (event) => {
+      try {
+        const msg = JSON.parse(event.payload);
+        handleEventMessage(msg);
+      } catch {
+        // ignore
+      }
+    }).then((fn) => {
+      _unlistenFn = fn;
+    }).catch(() => {});
+  }, []);
 
   const adjustHeight = () => {
     const ta = textareaRef.current;
@@ -19,12 +41,71 @@ export default function ChatInput() {
     ta.style.height = Math.min(ta.scrollHeight, 150) + "px";
   };
 
-  const handleSend = (text?: string) => {
+  const handleSend = async (text?: string) => {
     const msg = (text || value).trim();
     if (!msg) return;
     setValue("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    sendMessage(msg);
+
+    const store = useAgentStore.getState();
+    const projectRoot = useProjectStore.getState().projectRoot;
+
+    if (!projectRoot) {
+      store.addMessage({
+        id: crypto.randomUUID(),
+        role: "system",
+        content: "Please open a project first",
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    const msgId = crypto.randomUUID();
+    currentMessageId = msgId;
+
+    store.addMessage({
+      id: msgId,
+      role: "user",
+      content: msg,
+      timestamp: Date.now(),
+    });
+
+    store.clearStream();
+    store.setStreaming(true);
+
+    try {
+      // Ensure agent started
+      const running = await invoke<boolean>("is_agent_running").catch(() => false);
+      if (!running) {
+        store.setStreaming(false);
+        console.log("[Agent] Starting...");
+        await invoke("start_agent", { projectPath: projectRoot });
+        store.setStreaming(true);
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      // Send message
+      await invoke("send_agent_message", { content: msg });
+    } catch (e) {
+      store.addMessage({
+        id: crypto.randomUUID(),
+        role: "system",
+        content: `Failed: ${e}`,
+        timestamp: Date.now(),
+      });
+      store.setStreaming(false);
+      currentMessageId = null;
+    }
+  };
+
+  const handleStop = async () => {
+    try {
+      await invoke("stop_agent");
+    } catch {
+      // ignore
+    }
+    useAgentStore.getState().finishStream();
+    currentMessageId = null;
   };
 
   // Listen for suggestion clicks from EmptyState
@@ -60,7 +141,7 @@ export default function ChatInput() {
         <div className="flex items-center pr-2 pb-2">
           {effectivelyStreaming ? (
             <button
-              onClick={stopAgent}
+              onClick={handleStop}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-[#f38ba8] hover:bg-[#eba0ac] text-[#11111b] transition-colors"
               title="Stop"
             >
@@ -83,4 +164,50 @@ export default function ChatInput() {
       </div>
     </div>
   );
+}
+
+function handleEventMessage(msg: Record<string, unknown>) {
+  const { appendStream, finishStream, addMessage, addToolCall, updateToolCallById } =
+    useAgentStore.getState();
+
+  switch (msg.type) {
+    case "stream":
+      if (msg.content) appendStream(msg.content as string);
+      break;
+    case "assistant_text":
+      if (msg.content) appendStream(msg.content as string);
+      break;
+    case "tool_use":
+      addToolCall({
+        id: crypto.randomUUID(),
+        messageId: currentMessageId ?? undefined,
+        name: (msg.name as string) || "unknown",
+        input: (msg.input as Record<string, unknown>) || {},
+        status: "running",
+        timestamp: Date.now(),
+      });
+      break;
+    case "tool_result":
+      if (msg.toolUseId) {
+        updateToolCallById(msg.toolUseId as string, (msg.content as string) || "", "completed");
+      }
+      break;
+    case "warning":
+      if (msg.content) appendStream(`\n⚠️ ${msg.content}\n`);
+      break;
+    case "done":
+      finishStream();
+      currentMessageId = null;
+      break;
+    case "error":
+      addMessage({
+        id: crypto.randomUUID(),
+        role: "system",
+        content: `❌ ${msg.content}`,
+        timestamp: Date.now(),
+      });
+      finishStream();
+      currentMessageId = null;
+      break;
+  }
 }
