@@ -92,11 +92,32 @@ export function useAgent() {
           "completed",
         );
 
-        // If this was a file-changing tool, trigger refresh
+        // If this was a file-changing tool, trigger refresh and create diff
         const changedFile = pendingFileChanges.get(toolUseId);
         if (changedFile) {
           pendingFileChanges.delete(toolUseId);
-          handleFileChange(changedFile);
+
+          // Create a pending diff if the file is currently open
+          const { openFiles, addPendingDiff } = useEditorStore.getState();
+          const openFile = openFiles.get(changedFile);
+          if (openFile) {
+            // Read the new content from disk (agent already wrote it)
+            invoke<string>("read_file", { path: changedFile }).then((newContent) => {
+              addPendingDiff({
+                id: crypto.randomUUID(),
+                path: changedFile,
+                original: openFile.content,
+                modified: newContent,
+                language: openFile.language,
+              });
+            }).catch(() => {
+              // If read fails, just do a normal refresh
+              handleFileChange(changedFile);
+            });
+          } else {
+            // File not open — just refresh the tree
+            handleFileChange(changedFile);
+          }
         }
         break;
       }

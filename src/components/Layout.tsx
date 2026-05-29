@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useProjectStore } from "../stores/projectStore";
+import { useEditorStore } from "../stores/editorStore";
 import FileTree from "./Sidebar/FileTree";
 import EditorTabs from "./Editor/EditorTabs";
 import CodeEditor from "./Editor/CodeEditor";
+import DiffEditorView from "./Editor/DiffEditorView";
 import ChatPanel from "./AgentPanel/ChatPanel";
 import TerminalPanel from "./Terminal/Terminal";
 
 export default function Layout() {
   const { projectRoot, setProjectRoot, setTree } = useProjectStore();
+  const { activeDiffId, pendingDiffs, acceptDiff, rejectDiff, setActiveDiff } =
+    useEditorStore();
   const [showTerminal, setShowTerminal] = useState(false);
 
   const handleOpenProject = async () => {
@@ -19,6 +23,11 @@ export default function Layout() {
       setTree(tree as []);
     }
   };
+
+  // Find the active diff if any
+  const activeDiff = activeDiffId
+    ? pendingDiffs.find((d) => d.id === activeDiffId)
+    : null;
 
   return (
     <div className="grid grid-cols-[240px_1fr_360px] h-screen overflow-hidden bg-[#1e1e2e] text-white">
@@ -42,10 +51,40 @@ export default function Layout() {
 
       {/* Editor Area */}
       <div className="flex flex-col h-full min-w-0 overflow-hidden">
-        <EditorTabs />
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <CodeEditor />
-        </div>
+        {/* Show pending diff badges in tabs */}
+        {pendingDiffs.length > 0 && !activeDiff && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-[#181825] border-b border-white/5">
+            {pendingDiffs.map((diff) => (
+              <button
+                key={diff.id}
+                onClick={() => setActiveDiff(diff.id)}
+                className="flex items-center gap-1.5 px-2 py-0.5 text-xs bg-[#f9e2af]/10 text-[#f9e2af] rounded-md hover:bg-[#f9e2af]/20 transition-colors"
+              >
+                <span>⟳</span>
+                <span>{diff.path.split("/").pop()}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeDiff ? (
+          <DiffEditorView
+            original={activeDiff.original}
+            modified={activeDiff.modified}
+            language={activeDiff.language}
+            path={activeDiff.path}
+            onAccept={() => acceptDiff(activeDiff.id)}
+            onReject={() => rejectDiff(activeDiff.id)}
+          />
+        ) : (
+          <>
+            <EditorTabs />
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <CodeEditor />
+            </div>
+          </>
+        )}
+
         {/* Terminal toggle */}
         <div className="border-t border-white/5">
           <button
