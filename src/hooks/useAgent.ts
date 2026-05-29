@@ -2,10 +2,28 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useAgentStore } from "../stores/agentStore";
 import { useProjectStore } from "../stores/projectStore";
+import { useEditorStore } from "../stores/editorStore";
+
+/** Tool names that modify files */
+const FILE_WRITE_TOOLS = new Set(["Write", "Edit"]);
+
+/** Extract file path from tool input */
+function getToolPath(name: string, input: Record<string, unknown>): string | null {
+  if (input.path) return input.path as string;
+  if (input.file_path) return input.file_path as string;
+  if (name === "Bash" && input.command) {
+    // Best-effort: not all bash commands touch files
+    return null;
+  }
+  return null;
+}
 
 export function useAgent() {
   let unlisten: (() => void) | null = null;
   let currentMessageId: string | null = null;
+
+  // Track pending file changes from tool_use → tool_result
+  const pendingFileChanges = new Map<string, string>(); // toolUseId → filePath
 
   async function startListening() {
     if (unlisten) return;
@@ -41,26 +59,47 @@ export function useAgent() {
         break;
 
       case "tool_use": {
+        const toolName = (msg.name as string) || "unknown";
+        const toolInput = (msg.input as Record<string, unknown>) || {};
+
+        // Generate a stable ID we can track
+        const toolId = crypto.randomUUID();
+
         addToolCall({
-          id: crypto.randomUUID(),
+          id: toolId,
           messageId: currentMessageId ?? undefined,
-          name: (msg.name as string) || "unknown",
-          input: (msg.input as Record<string, unknown>) || {},
+          name: toolName,
+          input: toolInput,
           status: "running",
           timestamp: Date.now(),
         });
+
+        // Track file-changing tools for auto-refresh
+        if (FILE_WRITE_TOOLS.has(toolName)) {
+          const filePath = getToolPath(toolName, toolInput);
+          if (filePath) {
+            pendingFileChanges.set(toolId, filePath);
+          }
+        }
         break;
       }
 
-      case "tool_result":
-        if (msg.toolUseId) {
-          updateToolCallById(
-            msg.toolUseId as string,
-            (msg.content as string) || "",
-            "completed",
-          );
+      case "tool_result": {
+        const toolUseId = msg.toolUseId as string;
+        updateToolCallById(
+          toolUseId,
+          (msg.content as string) || "",
+          "completed",
+        );
+
+        // If this was a file-changing tool, trigger refresh
+        const changedFile = pendingFileChanges.get(toolUseId);
+        if (changedFile) {
+          pendingFileChanges.delete(toolUseId);
+          handleFileChange(changedFile);
         }
         break;
+      }
 
       case "warning":
         if (msg.content) {
@@ -71,6 +110,11 @@ export function useAgent() {
       case "done":
         finishStream();
         currentMessageId = null;
+        // Flush any remaining pending changes
+        for (const [, filePath] of pendingFileChanges) {
+          handleFileChange(filePath);
+        }
+        pendingFileChanges.clear();
         break;
 
       case "error":
@@ -82,7 +126,24 @@ export function useAgent() {
         });
         finishStream();
         currentMessageId = null;
+        pendingFileChanges.clear();
         break;
+    }
+  }
+
+  /** Handle a file change detected from agent tool use */
+  function handleFileChange(filePath: string) {
+    // 1. Refresh the file in the editor if it's open
+    const { refreshFile } = useEditorStore.getState();
+    refreshFile(filePath);
+
+    // 2. Refresh the parent directory in the file tree
+    const { projectRoot, refreshDir } = useProjectStore.getState();
+    if (projectRoot) {
+      const parentDir = filePath.substring(0, filePath.lastIndexOf("/"));
+      if (parentDir && parentDir.startsWith(projectRoot)) {
+        refreshDir(parentDir);
+      }
     }
   }
 
@@ -100,7 +161,6 @@ export function useAgent() {
 
     const { addMessage, clearStream, setStreaming } = useAgentStore.getState();
 
-    // Track the message ID for tool call association
     const msgId = crypto.randomUUID();
     currentMessageId = msgId;
 
@@ -144,6 +204,7 @@ export function useAgent() {
     }
     finishStream();
     currentMessageId = null;
+    pendingFileChanges.clear();
   }
 
   return { sendMessage, stopAgent, startListening };

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
 
 export interface FileNode {
   name: string;
@@ -15,6 +16,10 @@ interface ProjectStore {
   setTree: (tree: FileNode[]) => void;
   setChildren: (dirPath: string, children: FileNode[]) => void;
   toggleDir: (path: string) => void;
+  /** Refresh a specific directory's children (e.g. after agent writes a file) */
+  refreshDir: (dirPath: string) => Promise<void>;
+  /** Refresh the root tree */
+  refreshRoot: () => Promise<void>;
   reset: () => void;
 }
 
@@ -31,7 +36,7 @@ function setChildrenInTree(nodes: FileNode[], dirPath: string, children: FileNod
   });
 }
 
-export const useProjectStore = create<ProjectStore>((set) => ({
+export const useProjectStore = create<ProjectStore>((set, get) => ({
   projectRoot: null,
   tree: [],
   expandedDirs: new Set(),
@@ -52,5 +57,25 @@ export const useProjectStore = create<ProjectStore>((set) => ({
       }
       return { expandedDirs: next };
     }),
+  refreshDir: async (dirPath: string) => {
+    try {
+      const children = await invoke<FileNode[]>("read_dir_children", { path: dirPath });
+      set((state) => ({
+        tree: setChildrenInTree(state.tree, dirPath, children),
+      }));
+    } catch {
+      // ignore
+    }
+  },
+  refreshRoot: async () => {
+    const { projectRoot } = get();
+    if (!projectRoot) return;
+    try {
+      const tree = await invoke<FileNode[]>("read_project_tree", { path: projectRoot });
+      set({ tree });
+    } catch {
+      // ignore
+    }
+  },
   reset: () => set({ projectRoot: null, tree: [], expandedDirs: new Set() }),
 }));

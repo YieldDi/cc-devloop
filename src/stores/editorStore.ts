@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { invoke } from "@tauri-apps/api/core";
 
 export interface OpenFile {
   path: string;
@@ -14,9 +15,11 @@ interface EditorStore {
   closeFile: (path: string) => void;
   setActiveFile: (path: string) => void;
   updateContent: (path: string, content: string) => void;
+  /** Re-read a file from disk and update the editor (e.g. after agent writes) */
+  refreshFile: (path: string) => Promise<void>;
 }
 
-export const useEditorStore = create<EditorStore>((set) => ({
+export const useEditorStore = create<EditorStore>((set, get) => ({
   openFiles: new Map(),
   activeFilePath: null,
 
@@ -52,4 +55,20 @@ export const useEditorStore = create<EditorStore>((set) => ({
       }
       return { openFiles: next };
     }),
+
+  refreshFile: async (path: string) => {
+    const { openFiles } = get();
+    const file = openFiles.get(path);
+    if (!file) return; // Only refresh if the file is open
+    try {
+      const content = await invoke<string>("read_file", { path });
+      set((state) => {
+        const next = new Map(state.openFiles);
+        next.set(path, { ...file, content, isDirty: false });
+        return { openFiles: next };
+      });
+    } catch {
+      // File might not exist yet, ignore
+    }
+  },
 }));
