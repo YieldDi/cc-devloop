@@ -4,7 +4,7 @@
 > 项目命名：cc-devloop (Claude Code Dev Loop)
 > 项目路径：/Users/txx/Desktop/YieldDi/cc-devloop
 > GitHub：https://github.com/YieldDi/cc-devloop
-> 当前阶段：Phase 1 MVP — Agent 通信修复 + 文件树懒加载已完成，待集成测试
+> 当前阶段：Phase 1 MVP — 基本功能已全部完成，待集成测试
 
 ---
 
@@ -18,6 +18,14 @@
 | Phase 3 V2 | ⬜ 未开始 | - |
 
 ## 已完成事项
+
+### 2026-05-29 Phase 1 MVP 功能完善
+
+- [x] Agent 上下文管理（SDK resume session，支持多轮对话）
+- [x] Agent 写文件后自动刷新（FileTree + Monaco 编辑器）
+- [x] Diff Editor 集成（side-by-side 对比，Accept/Reject）
+- [x] 聊天面板重构（Claude Desktop 风格：Markdown 渲染、工具调用卡片、胶囊输入框）
+- [ ] 端到端集成测试验证
 
 ### 2026-05-28 Phase 1 MVP 修复与优化
 
