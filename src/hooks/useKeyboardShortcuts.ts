@@ -1,55 +1,69 @@
 import { useEffect } from "react";
 import { useEditorStore } from "../stores/editorStore";
+import { useShortcutsStore, ShortcutBinding } from "../stores/shortcutsStore";
 
-export interface ShortcutDef {
-  keys: string;
-  label: string;
-  category: string;
+// Re-export for ShortcutsPanel
+export type { ShortcutBinding };
+export { useShortcutsStore };
+
+/** Parse shortcut string like "⌘S" or "⌘⇧F" into modifier flags + key */
+function parseShortcut(shortcut: string): { mod: boolean; shift: boolean; key: string } {
+  let mod = false;
+  let shift = false;
+  let key = shortcut;
+
+  if (key.includes("⌘")) {
+    mod = true;
+    key = key.replace("⌘", "");
+  }
+  if (key.includes("⇧")) {
+    shift = true;
+    key = key.replace("⇧", "");
+  }
+
+  return { mod, shift, key: key.toLowerCase() };
 }
-
-// Central shortcut registry — consumed by shortcut help panel
-export const SHORTCUTS: ShortcutDef[] = [
-  { keys: "⌘S", label: "Save file", category: "File" },
-  { keys: "⌘P", label: "Quick open file", category: "File" },
-  { keys: "⌘⇧F", label: "Global search", category: "Search" },
-  { keys: "⌘`", label: "Toggle terminal", category: "View" },
-  { keys: "⌘/", label: "Keyboard shortcuts", category: "Help" },
-];
 
 export function useKeyboardShortcuts(onToggleShortcuts?: () => void) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
+      const store = useShortcutsStore.getState();
+      const bindings = store.bindings;
 
-      // ⌘S — save current file
-      if (mod && e.key === "s" && !e.shiftKey) {
-        e.preventDefault();
-        const { activeFilePath, saveFile } = useEditorStore.getState();
-        if (activeFilePath) saveFile(activeFilePath);
-      }
+      for (const binding of bindings) {
+        const parsed = parseShortcut(binding.keys);
 
-      // ⌘` — toggle terminal
-      if (mod && e.key === "`") {
-        e.preventDefault();
-        useEditorStore.getState().toggleTerminal();
-      }
-
-      // ⌘P — quick open (dispatch custom event for Palette component to pick up)
-      if (mod && e.key === "p" && !e.shiftKey) {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent("open-palette"));
-      }
-
-      // ⌘⇧F — global search
-      if (mod && e.shiftKey && e.key === "F") {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent("open-search"));
-      }
-
-      // ⌘/ — keyboard shortcuts
-      if (mod && e.key === "/") {
-        e.preventDefault();
-        onToggleShortcuts?.();
+        if (
+          mod === parsed.mod &&
+          e.shiftKey === parsed.shift &&
+          e.key.toLowerCase() === parsed.key
+        ) {
+          switch (binding.id) {
+            case "save":
+              e.preventDefault();
+              const { activeFilePath, saveFile } = useEditorStore.getState();
+              if (activeFilePath) saveFile(activeFilePath);
+              break;
+            case "toggleTerminal":
+              e.preventDefault();
+              useEditorStore.getState().toggleTerminal();
+              break;
+            case "quickOpen":
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent("open-palette"));
+              break;
+            case "globalSearch":
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent("open-search"));
+              break;
+            case "showShortcuts":
+              e.preventDefault();
+              onToggleShortcuts?.();
+              break;
+          }
+          return; // Only match first binding
+        }
       }
     };
 

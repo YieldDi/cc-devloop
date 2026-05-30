@@ -19,9 +19,7 @@ pub fn run() {
             }),
         })
         .manage(TerminalAppState {
-            terminal: std::sync::Mutex::new(TerminalState {
-                writer: None,
-            }),
+            terminal: std::sync::Mutex::new(TerminalState::default()),
         })
         .manage(GitState {
             project_path: std::sync::Mutex::new(None),
@@ -40,6 +38,7 @@ pub fn run() {
             commands::agent::is_agent_running,
             commands::terminal::start_terminal,
             commands::terminal::write_terminal,
+            commands::terminal::close_terminal,
             commands::terminal::resize_terminal,
             commands::git::git_status,
             commands::git::git_commit,
