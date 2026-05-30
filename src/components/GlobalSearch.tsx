@@ -16,7 +16,7 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const projectRoot = useProjectStore((s) => s.projectRoot);
   const { openFile } = useEditorStore();
 
