@@ -21,6 +21,8 @@ interface EditorStore {
   activeFilePath: string | null;
   pendingDiffs: PendingDiff[];
   activeDiffId: string | null;
+  showTerminal: boolean;
+  toggleTerminal: () => void;
   openFile: (path: string, content: string, language: string) => void;
   closeFile: (path: string) => void;
   setActiveFile: (path: string) => void;
@@ -38,6 +40,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   activeFilePath: null,
   pendingDiffs: [],
   activeDiffId: null,
+  showTerminal: false,
+  toggleTerminal: () => set((s) => ({ showTerminal: !s.showTerminal })),
 
   openFile: (path, content, language) =>
     set((state) => {

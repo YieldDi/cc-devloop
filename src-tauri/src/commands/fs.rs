@@ -4,6 +4,14 @@ use std::path::Path;
 use tauri_plugin_dialog::DialogExt;
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct SearchResult {
+    pub path: String,
+    pub line: usize,
+    pub column: usize,
+    pub text: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct FileNode {
     name: String,
     path: String,
@@ -22,6 +30,15 @@ fn should_skip(name: &str) -> bool {
             | "dist"
             | "build"
             | ".DS_Store"
+    )
+}
+
+fn is_binary_ext(name: &str) -> bool {
+    matches!(
+        name.rsplit('.').next().unwrap_or(""),
+        "png" | "jpg" | "jpeg" | "gif" | "ico" | "svg" | "woff" | "woff2" | "ttf" | "eot"
+            | "zip" | "tar" | "gz" | "lock" | "wasm" | "exe" | "dll" | "so" | "dylib"
+            | "mp3" | "mp4" | "webp" | "pdf"
     )
 }
 
@@ -136,4 +153,50 @@ pub async fn select_directory(app: tauri::AppHandle) -> Result<Option<String>, S
         .file()
         .blocking_pick_folder();
     Ok(dir.map(|p| p.to_string()))
+}
+
+/// Search for a text pattern across all project files
+#[tauri::command]
+pub async fn search_files(path: String, query: String) -> Result<Vec<SearchResult>, String> {
+    if query.is_empty() {
+        return Ok(vec![]);
+    }
+    let root = Path::new(&path);
+    if !root.is_dir() {
+        return Err("Not a directory".to_string());
+    }
+    let query_lower = query.to_lowercase();
+    let mut results: Vec<SearchResult> = Vec::new();
+    let max_results = 100;
+
+    fn walk(dir: &Path, query_lower: &str, results: &mut Vec<SearchResult>, max: usize) {
+        if results.len() >= max { return; }
+        let Ok(entries) = fs::read_dir(dir) else { return };
+        for entry in entries.flatten() {
+            if results.len() >= max { return; }
+            let name = entry.file_name().to_string_lossy().to_string();
+            if should_skip(&name) || is_binary_ext(&name) { continue; }
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                walk(&entry_path, query_lower, results, max);
+            } else {
+                let Ok(content) = fs::read_to_string(&entry_path) else { continue };
+                for (i, line) in content.lines().enumerate() {
+                    if results.len() >= max { return; }
+                    if line.to_lowercase().contains(query_lower) {
+                        let col = line.to_lowercase().find(query_lower).unwrap_or(0);
+                        results.push(SearchResult {
+                            path: entry_path.to_string_lossy().to_string(),
+                            line: i + 1,
+                            column: col + 1,
+                            text: line.trim().chars().take(200).collect(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    walk(root, &query_lower, &mut results, max_results);
+    Ok(results)
 }

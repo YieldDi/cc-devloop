@@ -2,6 +2,7 @@ mod commands;
 
 use commands::agent::{AgentState, AppState};
 use commands::terminal::{TerminalAppState, TerminalState};
+use commands::git::GitState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,6 +23,9 @@ pub fn run() {
                 writer: None,
             }),
         })
+        .manage(GitState {
+            project_path: std::sync::Mutex::new(None),
+        })
         .invoke_handler(tauri::generate_handler![
             commands::fs::read_project_tree,
             commands::fs::read_dir_children,
@@ -29,6 +33,7 @@ pub fn run() {
             commands::fs::read_file,
             commands::fs::write_file,
             commands::fs::select_directory,
+            commands::fs::search_files,
             commands::agent::start_agent,
             commands::agent::send_agent_message,
             commands::agent::stop_agent,
@@ -36,6 +41,9 @@ pub fn run() {
             commands::terminal::start_terminal,
             commands::terminal::write_terminal,
             commands::terminal::resize_terminal,
+            commands::git::git_status,
+            commands::git::git_commit,
+            commands::git::git_set_project,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
