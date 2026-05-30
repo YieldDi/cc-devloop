@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { useProjectStore } from "../stores/projectStore";
 import { useEditorStore } from "../stores/editorStore";
 import FileTree from "./Sidebar/FileTree";
@@ -24,7 +25,29 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(240);
+  const dragging = useRef(false);
   useKeyboardShortcuts(() => setShowShortcuts((v) => !v));
+
+  // Sidebar drag handler
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      const delta = ev.clientX - startX;
+      setSidebarWidth(Math.max(160, Math.min(480, startWidth + delta)));
+    };
+    const onUp = () => {
+      dragging.current = false;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [sidebarWidth]);
 
   // Listen for open-palette event from keyboard shortcuts
   useEffect(() => {
@@ -36,6 +59,33 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
       window.removeEventListener("open-palette", paletteHandler);
       window.removeEventListener("open-search", searchHandler);
     };
+  }, []);
+
+  // Start file watcher when project opens
+  useEffect(() => {
+    if (!projectRoot) return;
+    invoke("watch_project", { path: projectRoot }).catch(() => {});
+    return () => { invoke("stop_watcher").catch(() => {}); };
+  }, [projectRoot]);
+
+  // Listen for file changes and refresh tree + open files
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const unlisten = listen<{ kind: string; paths: string[] }>("project:filechange", (event) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        // Refresh file tree
+        useProjectStore.getState().refreshRoot();
+        // Refresh any open files that changed
+        const { openFiles, refreshFile } = useEditorStore.getState();
+        for (const path of event.payload.paths) {
+          if (openFiles.has(path) && !openFiles.get(path)!.isDirty) {
+            refreshFile(path);
+          }
+        }
+      }, 300); // Debounce 300ms
+    });
+    return () => { unlisten.then((fn) => fn()); clearTimeout(timer); };
   }, []);
 
   // Intercept window close → go back to welcome instead of quitting
@@ -72,9 +122,9 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-base text-text">
       {/* Main content area: sidebar | editor | agent */}
-      <div className="flex-1 min-h-0 grid grid-cols-[240px_1fr_360px]">
+      <div className="flex-1 min-h-0 flex">
         {/* Sidebar */}
-        <div className="flex flex-col h-full overflow-hidden border-r border-surface1 bg-mantle">
+        <div className="flex flex-col h-full overflow-hidden border-r border-surface1 bg-mantle shrink-0" style={{ width: sidebarWidth }}>
           {/* Sidebar header: project icon + name + settings */}
           <div className="flex items-center justify-between p-2 border-b border-surface1">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -101,8 +151,14 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
           <FileTree />
         </div>
 
+        {/* Drag handle */}
+        <div
+          onMouseDown={handleDragStart}
+          className="w-1 cursor-col-resize hover:bg-blue/30 active:bg-blue/50 transition-colors shrink-0"
+        />
+
         {/* Editor Area */}
-        <div className="flex flex-col h-full min-w-0 overflow-hidden">
+        <div className="flex flex-col h-full min-w-0 flex-1 overflow-hidden">
           {/* Show pending diff badges in tabs */}
           {pendingDiffs.length > 0 && !activeDiff && (
             <div className="flex items-center gap-1 px-2 py-1 bg-mantle border-b border-surface1">
@@ -147,7 +203,7 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
         </div>
 
         {/* Agent Panel */}
-        <div className="flex flex-col h-full overflow-hidden border-l border-surface1 bg-mantle">
+        <div className="flex flex-col h-full overflow-hidden border-l border-surface1 bg-mantle shrink-0" style={{ width: 360 }}>
           <ChatPanel />
         </div>
       </div>

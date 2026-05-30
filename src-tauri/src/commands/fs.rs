@@ -200,3 +200,47 @@ pub async fn search_files(path: String, query: String) -> Result<Vec<SearchResul
     walk(root, &query_lower, &mut results, max_results);
     Ok(results)
 }
+
+#[tauri::command]
+pub async fn create_file(path: String, is_dir: bool) -> Result<(), String> {
+    let p = Path::new(&path);
+    if p.exists() {
+        return Err(format!("Already exists: {}", path));
+    }
+    if is_dir {
+        fs::create_dir_all(p).map_err(|e| e.to_string())?;
+    } else {
+        if let Some(parent) = p.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        fs::write(p, "").map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn rename_path(old_path: String, new_path: String) -> Result<(), String> {
+    let old = Path::new(&old_path);
+    let new = Path::new(&new_path);
+    if !old.exists() {
+        return Err(format!("Not found: {}", old_path));
+    }
+    if new.exists() {
+        return Err(format!("Already exists: {}", new_path));
+    }
+    fs::rename(old, new).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn delete_path(path: String) -> Result<(), String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Err(format!("Not found: {}", path));
+    }
+    if p.is_dir() {
+        fs::remove_dir_all(p).map_err(|e| e.to_string())?;
+    } else {
+        fs::remove_file(p).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
