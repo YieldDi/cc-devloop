@@ -1,4 +1,5 @@
 import { DiffEditor } from "@monaco-editor/react";
+import { useThemeStore } from "../../stores/themeStore";
 
 interface DiffEditorViewProps {
   original: string;
@@ -18,26 +19,29 @@ export default function DiffEditorView({
   onReject,
 }: DiffEditorViewProps) {
   const fileName = path.split("/").pop() || path;
+  const theme = useThemeStore((s) => s.theme);
+  const fontSize = useThemeStore((s) => s.fontSize);
+  const monacoTheme = theme === "dark" ? "vs-dark" : "vs";
 
   return (
     <div className="flex flex-col h-full">
       {/* Diff header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#181825] border-b border-[#45475a]">
+      <div className="flex items-center justify-between px-4 py-2 bg-mantle border-b border-surface1">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#f9e2af]">⟳</span>
-          <span className="text-sm text-[#cdd6f4]">{fileName}</span>
-          <span className="text-xs text-[#6c7086]">— Changes proposed</span>
+          <span className="text-xs text-yellow">⟳</span>
+          <span className="text-sm text-text">{fileName}</span>
+          <span className="text-xs text-overlay0">— Changes proposed</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={onAccept}
-            className="px-3 py-1 text-xs bg-[#a6e3a1] hover:bg-[#94d89a] text-[#11111b] rounded-lg font-medium transition-colors"
+            className="px-3 py-1 text-xs bg-green hover:bg-green-light text-crust rounded-lg font-medium transition-colors"
           >
             Accept
           </button>
           <button
             onClick={onReject}
-            className="px-3 py-1 text-xs bg-[#45475a] hover:bg-[#585b70] text-[#cdd6f4] rounded-lg font-medium transition-colors"
+            className="px-3 py-1 text-xs bg-surface1 hover:bg-surface2 text-text rounded-lg font-medium transition-colors"
           >
             Reject
           </button>
@@ -51,11 +55,11 @@ export default function DiffEditorView({
           language={language}
           original={original}
           modified={modified}
-          theme="vs-dark"
+          theme={monacoTheme}
           options={{
             readOnly: true,
             renderSideBySide: true,
-            fontSize: 13,
+            fontSize,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
             automaticLayout: true,

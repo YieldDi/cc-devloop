@@ -57,6 +57,12 @@ export default function ChatInput() {
     if (textareaRef.current) textareaRef.current.style.height = "auto";
 
     const store = useAgentStore.getState();
+
+    // Ensure there's an active chat
+    if (!store.activeChatId) {
+      store.createChat();
+    }
+
     const projectRoot = useProjectStore.getState().projectRoot;
 
     if (!projectRoot) {
@@ -129,7 +135,7 @@ export default function ChatInput() {
 
   return (
     <div className="px-3 pb-3 pt-2">
-      <div className="relative flex items-end bg-[#313244] rounded-2xl border border-[#45475a] focus-within:border-[#89b4fa] transition-colors">
+      <div className="relative flex items-end bg-surface0 rounded-2xl border border-surface1 focus-within:border-blue transition-colors">
         <textarea
           ref={textareaRef}
           value={value}
@@ -139,7 +145,7 @@ export default function ChatInput() {
           }}
           rows={1}
           placeholder="Message the agent..."
-          className="flex-1 bg-transparent text-sm text-[#cdd6f4] placeholder-[#6c7086] px-4 py-3 resize-none outline-none max-h-[150px]"
+          className="flex-1 bg-transparent text-sm text-text placeholder-overlay0 px-4 py-3 resize-none outline-none max-h-[150px]"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
@@ -151,7 +157,7 @@ export default function ChatInput() {
           {effectivelyStreaming ? (
             <button
               onClick={handleStop}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#f38ba8] hover:bg-[#eba0ac] text-[#11111b] transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-red hover:bg-maroon text-crust transition-colors"
               title="Stop"
             >
               ■
@@ -160,7 +166,7 @@ export default function ChatInput() {
             <button
               onClick={() => handleSend()}
               disabled={!value.trim()}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#89b4fa] hover:bg-[#b4befe] disabled:opacity-30 disabled:cursor-not-allowed text-[#11111b] transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-blue hover:bg-lavender disabled:opacity-30 disabled:cursor-not-allowed text-crust transition-colors"
               title="Send (⌘+Enter)"
             >
               ↑
@@ -169,7 +175,7 @@ export default function ChatInput() {
         </div>
       </div>
       <div className="text-center mt-1">
-        <span className="text-[10px] text-[#6c7086]">⌘+Enter to send</span>
+        <span className="text-[10px] text-overlay0">⌘+Enter to send</span>
       </div>
     </div>
   );
@@ -233,6 +239,19 @@ function handleEventMessage(msg: Record<string, unknown>) {
       for (const [, filePath] of pendingFileChanges) {
         handleFileChange(filePath);
       }
+      pendingFileChanges.clear();
+      break;
+    case "exit":
+      if (useAgentStore.getState().isStreaming) {
+        finishStream();
+      }
+      addMessage({
+        id: crypto.randomUUID(),
+        role: "system",
+        content: "Agent process exited. Start a new conversation to restart.",
+        timestamp: Date.now(),
+      });
+      currentMessageId = null;
       pendingFileChanges.clear();
       break;
     case "error":

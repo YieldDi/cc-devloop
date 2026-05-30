@@ -1,6 +1,7 @@
 mod commands;
 
 use commands::agent::{AgentState, AppState};
+use commands::terminal::{TerminalAppState, TerminalState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,6 +17,11 @@ pub fn run() {
                 ready: false,
             }),
         })
+        .manage(TerminalAppState {
+            terminal: std::sync::Mutex::new(TerminalState {
+                writer: None,
+            }),
+        })
         .invoke_handler(tauri::generate_handler![
             commands::fs::read_project_tree,
             commands::fs::read_dir_children,
@@ -27,6 +33,9 @@ pub fn run() {
             commands::agent::send_agent_message,
             commands::agent::stop_agent,
             commands::agent::is_agent_running,
+            commands::terminal::start_terminal,
+            commands::terminal::write_terminal,
+            commands::terminal::resize_terminal,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

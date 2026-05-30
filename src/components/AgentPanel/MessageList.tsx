@@ -1,11 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useAgentStore } from "../../stores/agentStore";
 import EmptyState from "./EmptyState";
 import MessageBubble from "./MessageBubble";
 import StreamingMessage from "./StreamingMessage";
 
+const EMPTY_MESSAGES: never[] = [];
+
 export default function MessageList() {
-  const { messages, isStreaming, currentStream } = useAgentStore();
+  const activeChatId = useAgentStore((s) => s.activeChatId);
+  const chatMessages = useAgentStore((s) => {
+    const chat = s.chats.find((c) => c.id === s.activeChatId);
+    return chat?.messages;
+  });
+  const messages = chatMessages ?? EMPTY_MESSAGES;
+  const isStreaming = useAgentStore((s) => s.isStreaming);
+  const currentStream = useAgentStore((s) => s.currentStream);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,7 +35,7 @@ export default function MessageList() {
       )}
       {isStreaming && !currentStream && (
         <div className="flex justify-start py-1">
-          <div className="flex items-center gap-2 text-xs text-[#6c7086]">
+          <div className="flex items-center gap-2 text-xs text-overlay0">
             <span className="animate-spin">⟳</span> Thinking...
           </div>
         </div>

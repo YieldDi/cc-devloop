@@ -13,10 +13,12 @@ interface ProjectStore {
   projectRoot: string | null;
   tree: FileNode[];
   expandedDirs: Set<string>;
+  recentProjects: string[];
   setProjectRoot: (path: string) => void;
   setTree: (tree: FileNode[]) => void;
   setChildren: (dirPath: string, children: FileNode[]) => void;
   toggleDir: (path: string) => void;
+  addRecentProject: (path: string) => void;
   /** Refresh a specific directory's children (e.g. after agent writes a file) */
   refreshDir: (dirPath: string) => Promise<void>;
   /** Refresh the root tree */
@@ -43,9 +45,15 @@ export const useProjectStore = create<ProjectStore>()(
       projectRoot: null,
       tree: [],
       expandedDirs: new Set(),
+      recentProjects: [],
 
       setProjectRoot: (path) => set({ projectRoot: path }),
       setTree: (tree) => set({ tree }),
+      addRecentProject: (path) =>
+        set((state) => {
+          const filtered = state.recentProjects.filter((p) => p !== path);
+          return { recentProjects: [path, ...filtered].slice(0, 10) };
+        }),
       setChildren: (dirPath, children) =>
         set((state) => ({
           tree: setChildrenInTree(state.tree, dirPath, children),
@@ -135,7 +143,13 @@ export const useProjectStore = create<ProjectStore>()(
     }),
     {
       name: "cc-devloop-project",
-      partialize: (state) => ({ projectRoot: state.projectRoot }),
+      partialize: (state) => ({ projectRoot: state.projectRoot, recentProjects: state.recentProjects }),
+      onRehydrateStorage: () => (state) => {
+        // Migrate: if projectRoot exists but recentProjects is empty, seed it
+        if (state?.projectRoot && state.recentProjects.length === 0) {
+          state.recentProjects = [state.projectRoot];
+        }
+      },
     },
   ),
 );

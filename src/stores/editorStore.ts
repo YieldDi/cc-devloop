@@ -25,6 +25,7 @@ interface EditorStore {
   closeFile: (path: string) => void;
   setActiveFile: (path: string) => void;
   updateContent: (path: string, content: string) => void;
+  saveFile: (path: string) => Promise<void>;
   refreshFile: (path: string) => Promise<void>;
   addPendingDiff: (diff: PendingDiff) => void;
   acceptDiff: (diffId: string) => Promise<void>;
@@ -84,6 +85,22 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       });
     } catch {
       // File might not exist yet
+    }
+  },
+
+  saveFile: async (path: string) => {
+    const { openFiles } = get();
+    const file = openFiles.get(path);
+    if (!file || !file.isDirty) return;
+    try {
+      await invoke("write_file", { path, content: file.content });
+      set((state) => {
+        const next = new Map(state.openFiles);
+        next.set(path, { ...file, isDirty: false });
+        return { openFiles: next };
+      });
+    } catch (e) {
+      console.error("Save failed:", e);
     }
   },
 

@@ -1,19 +1,33 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useProjectStore } from "../stores/projectStore";
 import { useEditorStore } from "../stores/editorStore";
 import FileTree from "./Sidebar/FileTree";
+import SettingsPanel from "./Sidebar/SettingsPanel";
 import EditorTabs from "./Editor/EditorTabs";
 import CodeEditor from "./Editor/CodeEditor";
 import DiffEditorView from "./Editor/DiffEditorView";
 import ChatPanel from "./AgentPanel/ChatPanel";
 import TerminalPanel from "./Terminal/Terminal";
+import StatusBar from "./StatusBar";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 
-export default function Layout() {
-  const { projectRoot, tree, setProjectRoot, setTree, refreshRoot } = useProjectStore();
+export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => void }) {
+  const { projectRoot, tree, setProjectRoot, setTree, refreshRoot, addRecentProject } = useProjectStore();
   const { activeDiffId, pendingDiffs, acceptDiff, rejectDiff, setActiveDiff } =
     useEditorStore();
   const [showTerminal, setShowTerminal] = useState(false);
+  useKeyboardShortcuts();
+
+  // Intercept window close → go back to welcome instead of quitting
+  useEffect(() => {
+    const unlisten = getCurrentWindow().onCloseRequested(async (event) => {
+      event.preventDefault();
+      onBackToWelcome();
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [onBackToWelcome]);
 
   // Auto-restore tree when projectRoot is persisted but tree is empty
   useEffect(() => {
@@ -26,6 +40,7 @@ export default function Layout() {
     const path = await invoke<string | null>("select_directory");
     if (path) {
       setProjectRoot(path);
+      addRecentProject(path);
       const tree = await invoke("read_project_tree", { path });
       setTree(tree as []);
     }
@@ -37,22 +52,32 @@ export default function Layout() {
     : null;
 
   return (
-    <div className="grid grid-cols-[240px_1fr_360px] h-screen overflow-hidden bg-[#1e1e2e] text-white">
+    <div className="grid grid-cols-[240px_1fr_360px] h-screen overflow-hidden bg-base text-text">
       {/* Sidebar */}
-      <div className="flex flex-col h-full overflow-hidden border-r border-white/5 bg-[#181825]">
-        <div className="p-2 border-b border-white/5">
-          <button
-            onClick={handleOpenProject}
-            className="w-full px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 rounded text-center"
-          >
-            {projectRoot ? "切换项目" : "打开项目"}
-          </button>
-        </div>
-        {projectRoot && (
-          <div className="px-3 py-1 text-xs text-gray-400 truncate border-b border-white/5">
-            {projectRoot.split("/").pop()}
+      <div className="flex flex-col h-full overflow-hidden border-r border-surface1 bg-mantle">
+        {/* Sidebar header: project icon + name + settings */}
+        <div className="flex items-center justify-between p-2 border-b border-surface1">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <button
+              onClick={onBackToWelcome}
+              className="flex items-center gap-1 p-1.5 rounded-md text-overlay0 hover:text-text hover:bg-surface0 transition-colors shrink-0 group"
+              title="Switch Project"
+            >
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.879a1.5 1.5 0 0 1 1.06.44l1.122 1.12A1.5 1.5 0 0 0 9.62 4H13.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9z"/>
+              </svg>
+              <svg className="group-hover:block hidden" width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 8h12M9 3l5 5-5 5"/>
+              </svg>
+            </button>
+            {projectRoot && (
+              <span className="text-sm font-semibold text-subtext1 truncate">
+                {projectRoot.split("/").pop()}
+              </span>
+            )}
           </div>
-        )}
+          <SettingsPanel />
+        </div>
         <FileTree />
       </div>
 
@@ -60,12 +85,12 @@ export default function Layout() {
       <div className="flex flex-col h-full min-w-0 overflow-hidden">
         {/* Show pending diff badges in tabs */}
         {pendingDiffs.length > 0 && !activeDiff && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-[#181825] border-b border-white/5">
+          <div className="flex items-center gap-1 px-2 py-1 bg-mantle border-b border-surface1">
             {pendingDiffs.map((diff) => (
               <button
                 key={diff.id}
                 onClick={() => setActiveDiff(diff.id)}
-                className="flex items-center gap-1.5 px-2 py-0.5 text-xs bg-[#f9e2af]/10 text-[#f9e2af] rounded-md hover:bg-[#f9e2af]/20 transition-colors"
+                className="flex items-center gap-1.5 px-2 py-0.5 text-xs bg-yellow/10 text-yellow rounded-md hover:bg-yellow/20 transition-colors"
               >
                 <span>⟳</span>
                 <span>{diff.path.split("/").pop()}</span>
@@ -92,25 +117,19 @@ export default function Layout() {
           </>
         )}
 
-        {/* Terminal toggle */}
-        <div className="border-t border-white/5">
-          <button
-            onClick={() => setShowTerminal(!showTerminal)}
-            className="w-full px-3 py-1 text-xs text-gray-400 hover:text-white bg-[#181825] hover:bg-white/5 flex items-center gap-2"
-          >
-            <span>{showTerminal ? "▾" : "▸"}</span>
-            Terminal
-          </button>
-          {showTerminal && (
-            <div className="h-48 bg-[#181825]">
-              <TerminalPanel />
-            </div>
-          )}
-        </div>
+        {/* Terminal */}
+        {showTerminal && (
+          <div className="h-48 bg-mantle border-t border-surface1">
+            <TerminalPanel />
+          </div>
+        )}
+
+        {/* Status Bar */}
+        <StatusBar onToggleTerminal={() => setShowTerminal(!showTerminal)} showTerminal={showTerminal} />
       </div>
 
       {/* Agent Panel */}
-      <div className="flex flex-col h-full overflow-hidden border-l border-white/5 bg-[#181825]">
+      <div className="flex flex-col h-full overflow-hidden border-l border-surface1 bg-mantle">
         <ChatPanel />
       </div>
     </div>

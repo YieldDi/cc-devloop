@@ -1,23 +1,113 @@
 @import "tailwindcss";
 @import "highlight.js/styles/github-dark.css";
 
+
+
+/* ── Catppuccin Theme Tokens ── */
+@theme {
+  --color-crust: var(--c-crust);
+  --color-mantle: var(--c-mantle);
+  --color-base: var(--c-base);
+  --color-surface0: var(--c-surface0);
+  --color-surface1: var(--c-surface1);
+  --color-surface2: var(--c-surface2);
+  --color-overlay0: var(--c-overlay0);
+  --color-subtext1: var(--c-subtext1);
+  --color-text: var(--c-text);
+  --color-red: var(--c-red);
+  --color-maroon: var(--c-maroon);
+  --color-yellow: var(--c-yellow);
+  --color-green: var(--c-green);
+  --color-green-light: var(--c-green-light);
+  --color-blue: var(--c-blue);
+  --color-lavender: var(--c-lavender);
+  --color-flamingo: var(--c-flamingo);
+}
+
+/* Catppuccin Mocha (dark — default) */
+:root {
+  --c-crust: #11111b;
+  --c-mantle: #181825;
+  --c-base: #1e1e2e;
+  --c-surface0: #313244;
+  --c-surface1: #45475a;
+  --c-surface2: #585b70;
+  --c-overlay0: #6c7086;
+  --c-subtext1: #a6adc8;
+  --c-text: #cdd6f4;
+  --c-red: #f38ba8;
+  --c-maroon: #eba0ac;
+  --c-yellow: #f9e2af;
+  --c-green: #a6e3a1;
+  --c-green-light: #94d89a;
+  --c-blue: #89b4fa;
+  --c-lavender: #b4befe;
+  --c-flamingo: #f5e0dc;
+}
+
+/* Catppuccin Latte (light) */
+[data-theme="light"] {
+  --c-crust: #dce0e8;
+  --c-mantle: #e6e9ef;
+  --c-base: #eff1f5;
+  --c-surface0: #ccd0da;
+  --c-surface1: #bcc0cc;
+  --c-surface2: #acb0be;
+  --c-overlay0: #7c7f93;
+  --c-subtext1: #6c6f85;
+  --c-text: #4c4f69;
+  --c-red: #d20f39;
+  --c-maroon: #e64553;
+  --c-yellow: #df8e1d;
+  --c-green: #40a02b;
+  --c-green-light: #50b840;
+  --c-blue: #1e66f5;
+  --c-lavender: #7287fd;
+  --c-flamingo: #dc8a78;
+}
+
+/* highlight.js light overrides */
+[data-theme="light"] .hljs {
+  background: #dce0e8;
+  color: #4c4f69;
+}
+[data-theme="light"] .hljs-keyword,
+[data-theme="light"] .hljs-selector-tag,
+[data-theme="light"] .hljs-literal { color: #d20f39; }
+[data-theme="light"] .hljs-title { color: #1e66f5; }
+[data-theme="light"] .hljs-string,
+[data-theme="light"] .hljs-addition { color: #40a02b; }
+[data-theme="light"] .hljs-comment,
+[data-theme="light"] .hljs-quote { color: #7c7f93; font-style: italic; }
+[data-theme="light"] .hljs-variable,
+[data-theme="light"] .hljs-template-variable { color: #8839ef; }
+[data-theme="light"] .hljs-number,
+[data-theme="light"] .hljs-built_in { color: #fe640b; }
+[data-theme="light"] .hljs-type,
+[data-theme="light"] .hljs-attr { color: #df8e1d; }
+[data-theme="light"] .hljs-meta { color: #7287fd; }
+[data-theme="light"] .hljs-deletion { color: #d20f39; }
+[data-theme="light"] .hljs-symbol,
+[data-theme="light"] .hljs-bullet { color: #179299; }
+[data-theme="light"] .hljs-link { color: #179299; text-decoration: underline; }
+
 /* Agent panel scrollbar */
 .agent-scroll::-webkit-scrollbar {
   width: 4px;
 }
 .agent-scroll::-webkit-scrollbar-track {
-  background: #181825;
+  background: var(--c-mantle);
 }
 .agent-scroll::-webkit-scrollbar-thumb {
-  background: #45475a;
+  background: var(--c-surface1);
   border-radius: 2px;
 }
 .agent-scroll::-webkit-scrollbar-thumb:hover {
-  background: #585b70;
+  background: var(--c-surface2);
 }
 .agent-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #45475a #181825;
+  scrollbar-color: var(--c-surface1) var(--c-mantle);
 }
 
 /* Markdown body overrides for chat */

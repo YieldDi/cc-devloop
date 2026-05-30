@@ -222,7 +222,12 @@ export function useAgent() {
       return;
     }
 
-    const { addMessage, clearStream, setStreaming } = useAgentStore.getState();
+    const { addMessage, clearStream, setStreaming, activeChatId, createChat } = useAgentStore.getState();
+
+    // Ensure there's an active chat
+    if (!activeChatId) {
+      createChat();
+    }
 
     const msgId = crypto.randomUUID();
     currentMessageId = msgId;

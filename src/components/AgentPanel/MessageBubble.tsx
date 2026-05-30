@@ -4,6 +4,8 @@ import MarkdownRenderer from "./MarkdownRenderer";
 import ToolCallCard from "./ToolCallCard";
 import { useMemo } from "react";
 
+const EMPTY_TOOL_CALLS: never[] = [];
+
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -12,12 +14,12 @@ function UserBubble({ message }: { message: AgentMessage }) {
   return (
     <div className="flex justify-end group">
       <div className="max-w-[85%]">
-        <div className="bg-[#313244] rounded-2xl rounded-br-sm px-4 py-2.5">
-          <div className="text-sm text-[#cdd6f4] whitespace-pre-wrap break-words">
+        <div className="bg-surface0 rounded-2xl rounded-br-sm px-4 py-2.5">
+          <div className="text-sm text-text whitespace-pre-wrap break-words">
             {message.content}
           </div>
         </div>
-        <div className="text-[10px] text-[#6c7086] mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="text-[10px] text-overlay0 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
           {formatTime(message.timestamp)}
         </div>
       </div>
@@ -26,7 +28,11 @@ function UserBubble({ message }: { message: AgentMessage }) {
 }
 
 function AssistantBubble({ message }: { message: AgentMessage }) {
-  const toolCalls = useAgentStore((s) => s.toolCalls);
+  const chatToolCalls = useAgentStore((s) => {
+    const chat = s.chats.find((c) => c.id === s.activeChatId);
+    return chat?.toolCalls;
+  });
+  const toolCalls = chatToolCalls ?? EMPTY_TOOL_CALLS;
   const myToolCalls = useMemo(
     () => toolCalls.filter((tc) => tc.messageId === message.id),
     [toolCalls, message.id],
@@ -43,7 +49,7 @@ function AssistantBubble({ message }: { message: AgentMessage }) {
             ))}
           </div>
         )}
-        <div className="text-[10px] text-[#6c7086] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="text-[10px] text-overlay0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {formatTime(message.timestamp)}
         </div>
       </div>
@@ -54,8 +60,8 @@ function AssistantBubble({ message }: { message: AgentMessage }) {
 function SystemBubble({ message }: { message: AgentMessage }) {
   return (
     <div className="flex justify-center py-2">
-      <div className="bg-[#f38ba8]/10 border border-[#f38ba8]/20 rounded-lg px-3 py-1.5 max-w-[90%]">
-        <div className="text-xs text-[#f38ba8] text-center break-words">
+      <div className="bg-red/10 border border-red/20 rounded-lg px-3 py-1.5 max-w-[90%]">
+        <div className="text-xs text-red text-center break-words">
           {message.content}
         </div>
       </div>

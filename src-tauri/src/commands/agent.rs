@@ -73,7 +73,11 @@ pub async fn start_agent(
                                 let _ = app_stdout.emit("agent:message", &line);
                             }
                         }
-                        Ok(None) => break,
+                        Ok(None) => {
+                            // Process exited — notify frontend
+                            let _ = app_stdout.emit("agent:message", r#"{"type":"exit","reason":"Agent process exited"}"#);
+                            break;
+                        }
                         Err(e) => {
                             let _ = app_stdout.emit("agent:message", format!("{{\"type\":\"error\",\"content\":\"stdout read error: {e}\"}}"));
                             break;

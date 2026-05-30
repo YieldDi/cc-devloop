@@ -21,7 +21,7 @@ class MarkdownErrorBoundary extends Component<
 
   render() {
     if (this.state.hasError) {
-      return <pre className="text-sm text-[#cdd6f4] whitespace-pre-wrap">{this.props.fallback}</pre>;
+      return <pre className="text-sm text-text whitespace-pre-wrap">{this.props.fallback}</pre>;
     }
     return this.props.children;
   }
@@ -37,7 +37,7 @@ function CodeBlock({ className, children, ...props }: ComponentPropsWithoutRef<"
 
   return (
     <code
-      className="bg-[#313244] text-[#f38ba8] px-1.5 py-0.5 rounded text-xs font-mono"
+      className="bg-surface0 text-red px-1.5 py-0.5 rounded text-xs font-mono"
       {...props}
     >
       {children}
@@ -59,12 +59,12 @@ function BlockCode({ className, children }: { className?: string; children?: Rea
   }, [codeStr]);
 
   return (
-    <div className="relative group bg-[#11111b] rounded-lg my-2 overflow-hidden">
-      <div className="flex justify-between items-center px-3 py-1 bg-[#181825] text-[10px] text-[#6c7086]">
+    <div className="relative group bg-crust rounded-lg my-2 overflow-hidden">
+      <div className="flex justify-between items-center px-3 py-1 bg-mantle text-[10px] text-overlay0">
         <span>{language || "code"}</span>
         <button
           onClick={handleCopy}
-          className="text-[#6c7086] hover:text-[#cdd6f4] opacity-0 group-hover:opacity-100 transition-opacity"
+          className="text-overlay0 hover:text-text opacity-0 group-hover:opacity-100 transition-opacity"
         >
           {copied ? "Copied!" : "Copy"}
         </button>
@@ -81,7 +81,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
   return (
     <MarkdownErrorBoundary fallback={content}>
-      <div className="markdown-body text-sm text-[#cdd6f4] leading-relaxed">
+      <div className="markdown-body text-sm text-text leading-relaxed">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
@@ -96,29 +96,29 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
             ),
             li: ({ children }) => <li className="mb-0.5">{children}</li>,
             h1: ({ children }) => (
-              <h1 className="text-lg font-bold mt-4 mb-2 text-[#cdd6f4]">
+              <h1 className="text-lg font-bold mt-4 mb-2 text-text">
                 {children}
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-base font-bold mt-3 mb-1.5 text-[#cdd6f4]">
+              <h2 className="text-base font-bold mt-3 mb-1.5 text-text">
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-sm font-bold mt-2 mb-1 text-[#cdd6f4]">
+              <h3 className="text-sm font-bold mt-2 mb-1 text-text">
                 {children}
               </h3>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="border-l-2 border-[#89b4fa] pl-3 italic text-[#a6adc8]">
+              <blockquote className="border-l-2 border-blue pl-3 italic text-subtext1">
                 {children}
               </blockquote>
             ),
             a: ({ href, children }) => (
               <a
                 href={href}
-                className="text-[#89b4fa] underline hover:text-[#b4befe]"
+                className="text-blue underline hover:text-lavender"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -133,16 +133,16 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
               </div>
             ),
             th: ({ children }) => (
-              <th className="border border-[#45475a] px-2 py-1 bg-[#313244] text-left">
+              <th className="border border-surface1 px-2 py-1 bg-surface0 text-left">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="border border-[#45475a] px-2 py-1">{children}</td>
+              <td className="border border-surface1 px-2 py-1">{children}</td>
             ),
-            hr: () => <hr className="border-[#45475a] my-3" />,
+            hr: () => <hr className="border-surface1 my-3" />,
             strong: ({ children }) => (
-              <strong className="font-semibold text-[#cdd6f4]">{children}</strong>
+              <strong className="font-semibold text-text">{children}</strong>
             ),
           }}
         >
