@@ -4,6 +4,8 @@
 
 AI-Driven Full-Lifecycle Development Desktop App — powered by Claude Agent SDK.
 
+**[Download v0.1.0 for macOS (Apple Silicon)](https://github.com/YieldDi/cc-devloop/releases/tag/v0.1.0)**
+
 ## What is cc-devloop?
 
 cc-devloop (Claude Code Dev Loop) is a local desktop application for Mac & Windows that drives the complete software development lifecycle:
@@ -14,12 +16,16 @@ It supports multiple programming languages, frameworks, and project types throug
 
 ## Features
 
-- **AI Agent Workflow** — Multi-stage agent pipeline (PM → Architect → Coder → QA → DevOps) powered by Claude Agent SDK
-- **Built-in Code Editor** — Monaco Editor (VS Code engine) with 60+ language support, multi-tab, diff view
-- **File Explorer** — Recursive file tree with expand/collapse, file icons, click-to-open
-- **Streaming Agent Chat** — Real-time token streaming, tool call visualization, send/stop controls
-- **Embedded Terminal** — xterm.js terminal for running commands
-- **Project Profiles** — Auto-detect language/framework and inject context for the agent
+- **AI Agent Chat** — Streaming output, tool call visualization, Markdown rendering
+- **Code Editor** — Monaco Editor (VS Code engine) with 60+ language support, multi-tab, diff view
+- **File Explorer** — Lazy-loaded file tree with context menu (new/rename/delete), resizable sidebar
+- **Embedded Terminal** — Multi-tab terminal powered by xterm.js + PTY
+- **Git Diff Viewer** — Directory-organized file tree + side-by-side diff + line stats + navigation + jump-to-edit
+- **Agent Diff Review** — Accept/Reject diffs when agent writes files
+- **Keyboard Shortcuts** — ⌘P quick open, ⌘⇧F global search, ⌘` terminal toggle, ⌘/ shortcuts help
+- **Customizable Settings** — Theme, font size, keyboard bindings
+- **Welcome Screen** — Recent projects list, one-click project switching
+- **File Watcher** — Auto-detect external file changes and refresh
 
 ## Tech Stack
 
@@ -110,19 +116,26 @@ cc-devloop/
 ├── src/                    # React frontend
 │   ├── components/
 │   │   ├── Layout.tsx      # Three-panel grid layout
-│   │   ├── Sidebar/        # FileTree, project selector
+│   │   ├── WelcomeScreen.tsx # Welcome screen with recent projects
+│   │   ├── Sidebar/        # FileTree, SettingsPanel
 │   │   ├── Editor/         # Monaco editor, tabs, diff
 │   │   ├── AgentPanel/     # Chat, streaming output, tool calls
-│   │   └── Terminal/       # xterm.js terminal
-│   ├── stores/             # Zustand state (project, editor, agent, UI)
-│   ├── hooks/              # useAgent, useFileSystem
+│   │   ├── Terminal/       # xterm.js multi-tab terminal
+│   │   ├── GitChanges.tsx  # Git diff viewer modal
+│   │   ├── CommandPalette.tsx # Quick open (⌘P)
+│   │   └── GlobalSearch.tsx   # Global search (⌘⇧F)
+│   ├── stores/             # Zustand state (project, editor, agent, terminal, shortcuts, theme)
+│   ├── hooks/              # useAgent, useKeyboardShortcuts, useThemeEffect
 │   └── utils/              # Language detection, helpers
 ├── src-tauri/              # Rust backend (Tauri 2.0)
 │   ├── src/
 │   │   ├── lib.rs          # App setup, command registration
 │   │   └── commands/
 │   │       ├── fs.rs       # File system operations
-│   │       └── agent.rs    # Agent process lifecycle
+│   │       ├── agent.rs    # Agent process lifecycle
+│   │       ├── terminal.rs # Multi-terminal PTY management
+│   │       ├── git.rs      # Git status, diff, commit
+│   │       └── watcher.rs  # File system watcher
 │   ├── capabilities/       # Tauri 2.0 permissions
 │   └── tauri.conf.json     # Tauri configuration
 ├── docs/                   # Design documents
@@ -139,21 +152,26 @@ cc-devloop/
 
 ## Roadmap
 
-### Phase 1 — MVP (Current)
+### Phase 1 — MVP ✅ Completed
 - [x] Tauri 2.0 scaffold + React + TypeScript
 - [x] Three-panel layout (FileTree | Editor | Agent)
 - [x] Monaco Editor with multi-tab and language detection
-- [x] File tree with recursive browsing
+- [x] Lazy-loaded file tree with context menu
 - [x] Agent chat panel with streaming output
 - [x] Node.js agent sidecar with Claude Agent SDK
-- [x] Embedded terminal (xterm.js)
-- [ ] Agent communication debugging
-- [ ] Diff editor for agent changes
+- [x] Multi-tab terminal (xterm.js)
+- [x] Git diff viewer modal with navigation
+- [x] Agent diff review (Accept/Reject)
+- [x] Keyboard shortcuts + customizable bindings
+- [x] Welcome screen with recent projects
+- [x] Settings panel (theme, editor, shortcuts)
+- [x] File watcher auto-refresh
+- [x] Agent crash notification
 
-### Phase 2 — V1
+### Phase 2 — V1 (Next)
 - [ ] Multi-agent workflow engine (PM → Architect → Coder → QA → DevOps)
 - [ ] Project Profile system with auto-detection
-- [ ] Git integration (diff, commit, branch)
+- [ ] Git integration enhancement (branch management, history)
 - [ ] Stage gate review UI
 - [ ] SQLite persistence
 
@@ -165,4 +183,4 @@ cc-devloop/
 
 ## License
 
-ISC
+[MIT](./LICENSE)
