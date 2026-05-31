@@ -31,6 +31,7 @@ interface AgentStore {
   chats: Chat[];
   activeChatId: string | null;
   isStreaming: boolean;
+  agentRunning: boolean;
   currentStream: string;
 
   // Computed-like helpers
@@ -62,6 +63,7 @@ export const useAgentStore = create<AgentStore>()(
       chats: [],
       activeChatId: null,
       isStreaming: false,
+      agentRunning: false,
       currentStream: "",
 
       activeChat: () => {

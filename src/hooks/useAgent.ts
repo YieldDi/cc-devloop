@@ -153,6 +153,20 @@ export function useAgent() {
           timestamp: Date.now(),
         });
         finishStream();
+        useAgentStore.getState().agentRunning = false;
+        currentMessageId = null;
+        pendingFileChanges.clear();
+        break;
+
+      case "exit":
+        useAgentStore.setState({ agentRunning: false });
+        finishStream();
+        addMessage({
+          id: crypto.randomUUID(),
+          role: "system",
+          content: "Agent process exited. Send a new message to restart.",
+          timestamp: Date.now(),
+        });
         currentMessageId = null;
         pendingFileChanges.clear();
         break;
@@ -201,6 +215,7 @@ export function useAgent() {
     console.log("[Agent] Starting agent at", projectPath);
     try {
       const result = await invoke<string>("start_agent", { projectPath });
+      useAgentStore.getState().agentRunning = true;
       console.log("[Agent] Start result:", result);
     } catch (e) {
       console.error("[Agent] Start failed:", e);

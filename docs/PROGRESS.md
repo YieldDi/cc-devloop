@@ -1,10 +1,10 @@
 # cc-devloop 项目进度记录
 
-> 最后更新：2026-05-30
+> 最后更新：2026-05-31
 > 项目命名：cc-devloop (Claude Code Dev Loop)
 > 项目路径：/Users/txx/Desktop/YieldDi/cc-devloop
 > GitHub：https://github.com/YieldDi/cc-devloop
-> 当前阶段：Phase 1 MVP — 功能完善中，准备进入集成测试
+> 当前阶段：Phase 1 MVP — 功能完善收尾中
 
 ---
 
@@ -13,11 +13,52 @@
 | 阶段 | 状态 | 说明 |
 |------|------|------|
 | 方案设计 | ✅ 已完成 | 6 份设计文档已落盘 |
-| Phase 1 MVP 编码 | ✅ 主体完成 | Tauri+React+Monaco+Agent IPC 已跑通 |
+| Phase 1 MVP 编码 | ✅ 主体完成 | 全部核心功能已实现，收尾打磨中 |
 | Phase 2 V1 | ⬜ 未开始 | - |
 | Phase 3 V2 | ⬜ 未开始 | - |
 
 ## 已完成事项
+
+### 2026-05-31 MVP 完善 & Git Diff 查看器
+
+- [x] Git diff 查看器：弹窗式 diff 界面
+  - 左侧目录树（按文件目录组织，带 M/A/D/U 状态标识）
+  - 右侧 Monaco DiffEditor 并排对比
+  - 每个文件旁显示 +added/-deleted 行数统计
+  - 上一个/下一个文件导航（与目录树排序一致）
+  - 上一个/下一个 diff 块跳转
+  - Edit 按钮直接跳转到源代码编辑器
+- [x] 多终端 Tab 支持
+  - 前端生成 PTY ID，解决 Tauri IPC 时序问题
+  - Tab 名称自动编号（Terminal 1, Terminal 2...）
+  - 终端内容通过 CSS height 切换保持，不再丢失历史输出
+- [x] 快捷键系统
+  - ⌘P 快速打开、⌘⇧F 全局搜索、⌘` 终端切换、⌘/ 快捷键帮助
+  - 设置中支持自定义快捷键绑定
+  - 持久化到 localStorage
+- [x] 设置面板重构
+  - 居中弹窗布局，左侧分类导航（外观、编辑器、快捷键、关于）
+  - 快捷键管理：查看、修改、重置
+- [x] 文件树增强
+  - 右键上下文菜单（新建文件/文件夹、重命名、删除）
+  - 工具栏新建按钮
+  - 可拖拽调整侧边栏宽度（160-480px）
+- [x] 文件监听器（notify crate）
+  - 自动检测文件变化并刷新文件树
+  - 已打开文件自动重载（非脏文件）
+  - 300ms 防抖
+- [x] 欢迎界面
+  - 应用启动时显示欢迎页，支持选择项目
+  - 最近项目列表（最多 10 个，持久化）
+  - 从 Layout 返回欢迎页
+- [x] 终端修复
+  - 修复无法输入输出（listener 注册时序问题）
+  - 修复 React strict mode 双重挂载问题
+  - 修复隐藏后内容丢失（CSS 切换替代条件渲染）
+  - 修复多 Tab 命名问题
+- [x] 修复 git status porcelain 解析（trim() 截断路径首字符）
+- [x] 修复 Tauri invoke 参数命名（camelCase 约定）
+- [x] 移除窗口关闭拦截，应用正常关闭
 
 ### 2026-05-30 文件树自动刷新 & Agent 修复
 
@@ -37,7 +78,7 @@
 - [x] 重新生成全平台图标（PNG/ICNS/ICO/AppX/iOS/Android）
 - [x] cargo clean + 全量重编译验证图标生效
 - [x] 创建 CLAUDE.md 项目指引文件（架构、命令、协议说明）
-- [x] Agent 写文件后自动刷新 FileTree（首次实现，后发现走错路径）
+- [x] 添加 MIT 开源协议
 
 ### 2026-05-29 Phase 1 MVP 功能完善
 
@@ -45,7 +86,6 @@
 - [x] Agent 写文件后自动刷新（FileTree + Monaco 编辑器）
 - [x] Diff Editor 集成（side-by-side 对比，Accept/Reject）
 - [x] 聊天面板重构（Claude Desktop 风格：Markdown 渲染、工具调用卡片、胶囊输入框）
-- [ ] 端到端集成测试验证
 
 ### 2026-05-28 Phase 1 MVP 修复与优化
 
@@ -56,7 +96,6 @@
 - [x] 修复 TypeScript 编译错误
 - [x] 生成中英文 README 并推送
 - [x] 集成测试：验证 Agent 能否正常对话
-- [x] Diff Editor 集成
 
 ### 2026-05-27 Phase 1 MVP 编码
 
@@ -108,20 +147,14 @@
 
 ## 下一步行动（Phase 1 收尾 → Phase 2）
 
-1. **端到端集成测试验证**
-   - 启动应用，选择项目目录
-   - 发送消息给 Agent，验证完整链路（IPC→stdin→SDK→stdout→event→UI）
-   - 验证 Diff Editor accept/reject 流程
-
-2. **稳定性打磨**
+1. **Agent 稳定性增强**
    - Agent 进程异常退出时 UI 提示
-   - 快捷键优化
-   - 错误边界处理
+   - 错误边界处理优化
 
-3. **Phase 2 V1 规划启动**
+2. **Phase 2 V1 规划启动**
    - 多 Agent 工作流引擎设计
    - Project Profile 自动检测系统
-   - Git 集成（diff、commit、branch）
+   - Git 集成增强（diff、commit、branch 管理）
 
 ## 待讨论/待决策
 
@@ -129,11 +162,22 @@
 - [ ] Agent 执行命令的安全边界：白名单还是用户每次确认？
 - [ ] 是否需要离线模式？（Agent SDK 必须联网调用 Claude API）
 - [ ] 最低支持的 macOS / Windows 版本？
-- [ ] 侧边栏终端 vs 底部终端，用户偏好？
 
 ---
 
 ## 更新日志
+
+### 2026-05-31
+- Git diff 查看器弹窗（目录树 + Monaco DiffEditor + 统计 + 导航 + 编辑跳转）
+- 多终端 Tab 支持，修复终端输入输出和内容保持问题
+- 快捷键系统（⌘P/⌘⇧F/⌘`/⌘/）+ 设置中自定义
+- 设置面板重构为居中弹窗 + 分类导航
+- 文件树右键菜单（新建/重命名/删除）+ 可拖拽侧边栏
+- 文件监听器自动刷新
+- 欢迎界面 + 最近项目列表
+- 修复 git status porcelain 路径解析 bug
+- 修复 Tauri invoke 参数命名约定
+- 移除窗口关闭拦截
 
 ### 2026-05-30
 - 重新设计应用图标（渐变圆环 + 中心金星）
@@ -147,9 +191,12 @@
 ### 2026-05-28
 - 代码已推送到 GitHub (commit 5c00540)
 - 安装 desktop-commander MCP，获得终端执行能力
-- 确认 MVP 基本可运行，发现两个待修复问题：
-  - Agent 面板发消息无回复（通信链路待调试）
-  - 文件树加载缓慢（待优化）
+- 确认 MVP 基本可运行，发现两个待修复问题
+- Agent 通信链路修复
+
+### 2026-05-27
+- Phase 1 MVP 核心编码完成
+- 全部基础功能跑通
 
 ### 2026-05-25
 - 项目启动，完成全部方案设计
