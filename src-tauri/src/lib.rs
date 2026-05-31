@@ -50,6 +50,8 @@ pub fn run() {
             commands::git::git_status,
             commands::git::git_commit,
             commands::git::git_set_project,
+            commands::git::git_diff_summary,
+            commands::git::git_diff_file,
             commands::watcher::watch_project,
             commands::watcher::stop_watcher,
         ])

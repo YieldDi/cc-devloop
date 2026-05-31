@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { useProjectStore } from "../stores/projectStore";
 import { useEditorStore } from "../stores/editorStore";
@@ -20,7 +19,7 @@ import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 
 export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => void }) {
   const { projectRoot, tree, setProjectRoot, setTree, refreshRoot, addRecentProject } = useProjectStore();
-  const { activeDiffId, pendingDiffs, acceptDiff, rejectDiff, setActiveDiff, showTerminal } =
+  const { activeDiffId, pendingDiffs, acceptDiff, rejectDiff, setActiveDiff, showTerminal, terminalMounted } =
     useEditorStore();
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
@@ -49,7 +48,8 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
     window.addEventListener("mouseup", onUp);
   }, [sidebarWidth]);
 
-  // Listen for open-palette event from keyboard shortcuts
+  // Removed window close interception — app closes normally
+  // Users navigate to welcome via sidebar button
   useEffect(() => {
     const paletteHandler = () => setShowPalette(true);
     const searchHandler = () => setShowSearch(true);
@@ -88,14 +88,8 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
     return () => { unlisten.then((fn) => fn()); clearTimeout(timer); };
   }, []);
 
-  // Intercept window close → go back to welcome instead of quitting
-  useEffect(() => {
-    const unlisten = getCurrentWindow().onCloseRequested(async (event) => {
-      event.preventDefault();
-      onBackToWelcome();
-    });
-    return () => { unlisten.then((fn) => fn()); };
-  }, [onBackToWelcome]);
+  // Removed window close interception — app closes normally
+  // Users navigate to welcome via sidebar button
 
   // Auto-restore tree when projectRoot is persisted but tree is empty
   useEffect(() => {
@@ -194,9 +188,16 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
             </>
           )}
 
-          {/* Terminal */}
-          {showTerminal && (
-            <div className="h-48 bg-mantle border-t border-surface1">
+          {/* Terminal — once mounted, stays alive; CSS hide/show preserves content */}
+          {terminalMounted && (
+            <div
+              className="bg-mantle border-t border-surface1"
+              style={{
+                height: showTerminal ? 192 : 0,
+                overflow: "hidden",
+                transition: "height 0.15s ease",
+              }}
+            >
               <TerminalPanel />
             </div>
           )}

@@ -30,6 +30,7 @@ pub struct TerminalAppState {
 pub async fn start_terminal(
     app: AppHandle,
     state: State<'_, TerminalAppState>,
+    id: String,
     cwd: Option<String>,
 ) -> Result<String, String> {
     let pty_system = native_pty_system();
@@ -55,14 +56,11 @@ pub async fn start_terminal(
 
     let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
 
-    // Allocate an ID
-    let id = {
+    // Store with the provided ID
+    {
         let mut term = state.terminal.lock().map_err(|e| e.to_string())?;
-        let id = format!("term-{}", term.next_id);
-        term.next_id += 1;
         term.instances.insert(id.clone(), TermInstance { writer });
-        id
-    };
+    }
 
     // Read output in background and emit events with terminal ID
     let reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
@@ -84,7 +82,6 @@ pub async fn start_terminal(
                 Err(_) => break,
             }
         }
-        // Signal that this terminal has exited
         let _ = app_handle.emit(
             "terminal:exit",
             serde_json::json!({ "id": emit_id }),

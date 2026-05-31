@@ -28,12 +28,13 @@ function TermInstance({ tabId, active }: { tabId: string; active: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
-  const ptyIdRef = useRef<string | null>(null);
-  const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!containerRef.current || startedRef.current) return;
-    startedRef.current = true;
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clear any previous content (handles React strict mode re-mount)
+    container.innerHTML = "";
 
     const theme = useThemeStore.getState().theme;
     const term = new Terminal({
@@ -46,63 +47,67 @@ function TermInstance({ tabId, active }: { tabId: string; active: boolean }) {
 
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
-    term.open(containerRef.current);
+    term.open(container);
     fitAddon.fit();
 
     termRef.current = term;
     fitRef.current = fitAddon;
 
-    // Start PTY
-    const projectRoot = useProjectStore.getState().projectRoot;
-    invoke<string>("start_terminal", { cwd: projectRoot })
-      .then((ptyId) => {
-        ptyIdRef.current = ptyId;
-        // Update tab title
-        useTerminalStore.getState().updateTab(tabId, `Terminal ${ptyId.split("-")[1]}`, ptyId);
-      })
-      .catch((e) => {
-        term.writeln(`\x1b[31mFailed to start terminal: ${e}\x1b[0m`);
+    const ptyId = `pty-${tabId}`;
+
+    let unlisten: (() => void) | undefined;
+    let unlistenExit: (() => void) | undefined;
+    let alive = true;
+
+    (async () => {
+      // 1. Register listeners first
+      const outputUnlisten = await listen<{ id: string; data: string }>("terminal:output", (event) => {
+        if (event.payload.id === ptyId) {
+          term.write(event.payload.data);
+        }
       });
+      if (!alive) { outputUnlisten(); return; }
+      unlisten = outputUnlisten;
+
+      const exitUnlisten = await listen<{ id: string }>("terminal:exit", (event) => {
+        if (event.payload.id === ptyId) {
+          term.writeln("\r\n\x1b[33m[Process exited]\x1b[0m");
+        }
+      });
+      if (!alive) { exitUnlisten(); return; }
+      unlistenExit = exitUnlisten;
+
+      // 2. Start PTY
+      const projectRoot = useProjectStore.getState().projectRoot;
+      try {
+        await invoke<string>("start_terminal", { id: ptyId, cwd: projectRoot });
+        // Extract number from tabId (e.g. "tab-1" → "1")
+        const num = tabId.split("-")[1] || tabCounter;
+        useTerminalStore.getState().updateTab(tabId, `Terminal ${num}`, ptyId);
+      } catch (e) {
+        term.writeln(`\x1b[31mFailed to start terminal: ${e}\x1b[0m`);
+      }
+    })();
 
     // Send user input to PTY
     const inputDisposable = term.onData((data) => {
-      const pid = ptyIdRef.current;
-      if (pid) invoke("write_terminal", { id: pid, data }).catch(() => {});
-    });
-
-    // Listen for PTY output — filter by this terminal's PTY ID
-    let unlisten: (() => void) | undefined;
-    listen<{ id: string; data: string }>("terminal:output", (event) => {
-      if (event.payload.id === ptyIdRef.current) {
-        term.write(event.payload.data);
-      }
-    }).then((fn) => {
-      unlisten = fn;
-    });
-
-    // Listen for terminal exit
-    let unlistenExit: (() => void) | undefined;
-    listen<{ id: string }>("terminal:exit", (event) => {
-      if (event.payload.id === ptyIdRef.current) {
-        term.writeln("\r\n\x1b[33m[Process exited]\x1b[0m");
-      }
-    }).then((fn) => {
-      unlistenExit = fn;
+      invoke("write_terminal", { id: ptyId, data }).catch(() => {});
     });
 
     const handleResize = () => {
-      if (containerRef.current?.offsetParent) fitAddon.fit();
+      if (container.offsetParent) fitAddon.fit();
     };
     window.addEventListener("resize", handleResize);
 
     return () => {
+      alive = false;
       inputDisposable.dispose();
       unlisten?.();
       unlistenExit?.();
       window.removeEventListener("resize", handleResize);
-      const pid = ptyIdRef.current;
-      if (pid) invoke("close_terminal", { id: pid }).catch(() => {});
+      invoke("close_terminal", { id: ptyId }).catch(() => {});
       term.dispose();
+      container.innerHTML = "";
     };
   }, [tabId]);
 

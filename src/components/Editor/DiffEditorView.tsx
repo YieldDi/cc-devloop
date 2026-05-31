@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { DiffEditor } from "@monaco-editor/react";
 import { useThemeStore } from "../../stores/themeStore";
 
@@ -23,6 +24,13 @@ export default function DiffEditorView({
   const fontSize = useThemeStore((s) => s.fontSize);
   const monacoTheme = theme === "dark" ? "vs-dark" : "vs";
 
+  // ESC to close
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onReject(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onReject]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Diff header */}
@@ -30,7 +38,7 @@ export default function DiffEditorView({
         <div className="flex items-center gap-2">
           <span className="text-xs text-yellow">⟳</span>
           <span className="text-sm text-text">{fileName}</span>
-          <span className="text-xs text-overlay0">— Changes proposed</span>
+          <span className="text-xs text-overlay0">— Changes</span>
         </div>
         <div className="flex gap-2">
           <button
@@ -43,7 +51,7 @@ export default function DiffEditorView({
             onClick={onReject}
             className="px-3 py-1 text-xs bg-surface1 hover:bg-surface2 text-text rounded-lg font-medium transition-colors"
           >
-            Reject
+            Close
           </button>
         </div>
       </div>

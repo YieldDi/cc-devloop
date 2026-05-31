@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useAgentStore } from "../stores/agentStore";
 import { useEditorStore } from "../stores/editorStore";
 import { useProjectStore } from "../stores/projectStore";
+import GitChanges from "./GitChanges";
 
 interface GitInfo {
   branch: string;
@@ -29,6 +30,7 @@ export default function StatusBar() {
   const [showCommit, setShowCommit] = useState(false);
   const [message, setMessage] = useState("");
   const [committing, setCommitting] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => {
@@ -135,6 +137,20 @@ export default function StatusBar() {
             </button>
           )}
 
+          {/* View changes button */}
+          {git && totalChanges > 0 && (
+            <button
+              onClick={() => setShowChanges(true)}
+              className="flex items-center gap-1 px-1.5 rounded text-overlay0 hover:text-text hover:bg-surface1 transition-colors"
+              title="View uncommitted changes"
+            >
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.879a1.5 1.5 0 0 1 1.06.44l1.122 1.12A1.5 1.5 0 0 0 9.62 4H13.5A1.5 1.5 0 0 1 15 5.5V7H1V3.5zM1 8.5v4A1.5 1.5 0 0 0 2.5 14h11A1.5 1.5 0 0 0 15 12.5V8.5H1z"/>
+              </svg>
+              <span>Diff</span>
+            </button>
+          )}
+
           {!git && projectName && (
             <span className="flex items-center gap-1">
               <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" className="opacity-60">
@@ -149,6 +165,8 @@ export default function StatusBar() {
           {langLabel && <span>{langLabel}</span>}
         </div>
       </div>
+
+      {showChanges && <GitChanges onClose={() => setShowChanges(false)} />}
     </div>
   );
 }

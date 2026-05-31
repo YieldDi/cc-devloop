@@ -22,6 +22,7 @@ interface EditorStore {
   pendingDiffs: PendingDiff[];
   activeDiffId: string | null;
   showTerminal: boolean;
+  terminalMounted: boolean;
   toggleTerminal: () => void;
   openFile: (path: string, content: string, language: string) => void;
   closeFile: (path: string) => void;
@@ -41,7 +42,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   pendingDiffs: [],
   activeDiffId: null,
   showTerminal: false,
-  toggleTerminal: () => set((s) => ({ showTerminal: !s.showTerminal })),
+  terminalMounted: false,
+  toggleTerminal: () => set((s) => ({
+    showTerminal: !s.showTerminal,
+    terminalMounted: s.terminalMounted || !s.showTerminal, // mount on first open
+  })),
 
   openFile: (path, content, language) =>
     set((state) => {
