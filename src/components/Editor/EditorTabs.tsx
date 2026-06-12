@@ -20,30 +20,36 @@ export default function EditorTabs() {
   };
 
   return (
-    <div className="flex bg-mantle border-b border-surface1 overflow-x-auto">
+    <div className="flex bg-mantle border-b border-surface1/60 overflow-x-auto">
       {files.map((file) => {
         const name = file.path.split("/").pop() || file.path;
         const isActive = file.path === activeFilePath;
         return (
           <div
             key={file.path}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs cursor-pointer border-r border-surface1 shrink-0 ${
+            className={`group relative flex items-center gap-1.5 px-3 py-1.5 text-xs cursor-pointer border-r border-surface1/40 shrink-0 transition-all ${
               isActive
-                ? "bg-base text-text border-t-2 border-t-blue"
-                : "text-overlay0 hover:text-text hover:bg-surface0"
+                ? "bg-base text-text"
+                : "text-overlay0 hover:text-text hover:bg-surface0/40"
             }`}
             onClick={() => setActiveFile(file.path)}
           >
-            <span>{name}</span>
-            {file.isDirty && <span className="w-2 h-2 rounded-full bg-orange-400" />}
+            {/* Active indicator — sharp cyan line */}
+            {isActive && (
+              <span className="absolute bottom-0 left-0 right-0 h-px bg-cyan shadow-[0_0_6px_rgba(0,229,255,0.4)]" />
+            )}
+            <span className={isActive ? "text-text" : ""}>{name}</span>
+            {file.isDirty && (
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow shadow-[0_0_4px_rgba(240,192,80,0.5)]" />
+            )}
             <button
-              className="ml-1 text-overlay0 hover:text-text text-xs"
+              className={`ml-1 text-xs transition-opacity ${isActive ? "text-overlay0 hover:text-red opacity-60 hover:opacity-100" : "opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:!text-red"}`}
               onClick={(e) => {
                 e.stopPropagation();
                 handleClose(file.path);
               }}
             >
-              ✕
+              ×
             </button>
           </div>
         );

@@ -14,12 +14,12 @@ function UserBubble({ message }: { message: AgentMessage }) {
   return (
     <div className="flex justify-end group">
       <div className="max-w-[85%]">
-        <div className="bg-surface0 rounded-2xl rounded-br-sm px-4 py-2.5">
+        <div className="bg-cyan/8 border border-cyan/15 rounded-2xl rounded-br-sm px-4 py-2.5">
           <div className="text-sm text-text whitespace-pre-wrap break-words">
             {message.content}
           </div>
         </div>
-        <div className="text-[10px] text-overlay0 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="text-[10px] text-overlay0/50 mt-1 text-right opacity-0 group-hover:opacity-100 transition-opacity">
           {formatTime(message.timestamp)}
         </div>
       </div>
@@ -49,7 +49,7 @@ function AssistantBubble({ message }: { message: AgentMessage }) {
             ))}
           </div>
         )}
-        <div className="text-[10px] text-overlay0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="text-[10px] text-overlay0/50 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
           {formatTime(message.timestamp)}
         </div>
       </div>
@@ -60,8 +60,8 @@ function AssistantBubble({ message }: { message: AgentMessage }) {
 function SystemBubble({ message }: { message: AgentMessage }) {
   return (
     <div className="flex justify-center py-2">
-      <div className="bg-red/10 border border-red/20 rounded-lg px-3 py-1.5 max-w-[90%]">
-        <div className="text-xs text-red text-center break-words">
+      <div className="bg-red/5 border border-red/15 rounded-lg px-3 py-1.5 max-w-[90%]">
+        <div className="text-xs text-red/80 text-center break-words">
           {message.content}
         </div>
       </div>

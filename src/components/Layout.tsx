@@ -48,8 +48,6 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
     window.addEventListener("mouseup", onUp);
   }, [sidebarWidth]);
 
-  // Removed window close interception — app closes normally
-  // Users navigate to welcome via sidebar button
   useEffect(() => {
     const paletteHandler = () => setShowPalette(true);
     const searchHandler = () => setShowSearch(true);
@@ -74,22 +72,17 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
     const unlisten = listen<{ kind: string; paths: string[] }>("project:filechange", (event) => {
       clearTimeout(timer);
       timer = setTimeout(() => {
-        // Refresh file tree
         useProjectStore.getState().refreshRoot();
-        // Refresh any open files that changed
         const { openFiles, refreshFile } = useEditorStore.getState();
         for (const path of event.payload.paths) {
           if (openFiles.has(path) && !openFiles.get(path)!.isDirty) {
             refreshFile(path);
           }
         }
-      }, 300); // Debounce 300ms
+      }, 300);
     });
     return () => { unlisten.then((fn) => fn()); clearTimeout(timer); };
   }, []);
-
-  // Removed window close interception — app closes normally
-  // Users navigate to welcome via sidebar button
 
   // Auto-restore tree when projectRoot is persisted but tree is empty
   useEffect(() => {
@@ -108,23 +101,22 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
     }
   };
 
-  // Find the active diff if any
   const activeDiff = activeDiffId
     ? pendingDiffs.find((d) => d.id === activeDiffId)
     : null;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-base text-text">
+    <div className="flex flex-col h-screen overflow-hidden bg-crust text-text">
       {/* Main content area: sidebar | editor | agent */}
       <div className="flex-1 min-h-0 flex">
         {/* Sidebar */}
-        <div className="flex flex-col h-full overflow-hidden border-r border-surface1 bg-mantle shrink-0" style={{ width: sidebarWidth }}>
-          {/* Sidebar header: project icon + name + settings */}
-          <div className="flex items-center justify-between p-2 border-b border-surface1">
+        <div className="flex flex-col h-full overflow-hidden border-r border-surface1/60 bg-mantle shrink-0" style={{ width: sidebarWidth }}>
+          {/* Sidebar header */}
+          <div className="flex items-center justify-between px-3 py-2 border-b border-surface1/60 bg-gradient-to-r from-cyan/[0.03] to-transparent">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={onBackToWelcome}
-                className="flex items-center gap-1 p-1.5 rounded-md text-overlay0 hover:text-text hover:bg-surface0 transition-colors shrink-0 group"
+                className="flex items-center gap-1 p-1.5 rounded-md text-overlay0 hover:text-cyan hover:bg-surface0/60 transition-all shrink-0 group"
                 title="Switch Project"
               >
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
@@ -135,9 +127,14 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
                 </svg>
               </button>
               {projectRoot && (
-                <span className="text-sm font-semibold text-subtext1 truncate">
-                  {projectRoot.split("/").pop()}
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-semibold text-text truncate tracking-wide">
+                    {projectRoot.split(/[\\/]/).pop()}
+                  </span>
+                  <span className="text-[10px] text-overlay0 truncate font-mono leading-tight" title={projectRoot}>
+                    {projectRoot}
+                  </span>
+                </div>
               )}
             </div>
             <SettingsPanel />
@@ -148,21 +145,21 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
         {/* Drag handle */}
         <div
           onMouseDown={handleDragStart}
-          className="w-1 cursor-col-resize hover:bg-blue/30 active:bg-blue/50 transition-colors shrink-0"
+          className="w-px cursor-col-resize hover:w-1 hover:bg-cyan/20 active:bg-cyan/40 transition-all shrink-0"
         />
 
         {/* Editor Area */}
         <div className="flex flex-col h-full min-w-0 flex-1 overflow-hidden">
-          {/* Show pending diff badges in tabs */}
+          {/* Pending diff badges */}
           {pendingDiffs.length > 0 && !activeDiff && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-mantle border-b border-surface1">
+            <div className="flex items-center gap-1 px-2 py-1 bg-mantle/80 border-b border-surface1/60">
               {pendingDiffs.map((diff) => (
                 <button
                   key={diff.id}
                   onClick={() => setActiveDiff(diff.id)}
-                  className="flex items-center gap-1.5 px-2 py-0.5 text-xs bg-yellow/10 text-yellow rounded-md hover:bg-yellow/20 transition-colors"
+                  className="flex items-center gap-1.5 px-2 py-0.5 text-xs bg-yellow/5 border border-yellow/20 text-yellow rounded-md hover:bg-yellow/10 hover:border-yellow/30 transition-all"
                 >
-                  <span>⟳</span>
+                  <span className="dot-pulse text-yellow">●</span>
                   <span>{diff.path.split("/").pop()}</span>
                 </button>
               ))}
@@ -188,10 +185,10 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
             </>
           )}
 
-          {/* Terminal — once mounted, stays alive; CSS hide/show preserves content */}
+          {/* Terminal */}
           {terminalMounted && (
             <div
-              className="bg-mantle border-t border-surface1"
+              className="bg-mantle border-t border-surface1/60"
               style={{
                 height: showTerminal ? 192 : 0,
                 overflow: "hidden",
@@ -204,25 +201,21 @@ export default function Layout({ onBackToWelcome }: { onBackToWelcome: () => voi
         </div>
 
         {/* Agent Panel */}
-        <div className="flex flex-col h-full overflow-hidden border-l border-surface1 bg-mantle shrink-0" style={{ width: 360 }}>
+        <div className="flex flex-col h-full overflow-hidden border-l border-surface1/60 bg-mantle shrink-0" style={{ width: 360 }}>
           <ChatPanel />
         </div>
       </div>
 
-      {/* Status Bar — full width at bottom */}
+      {/* Status Bar */}
       <StatusBar />
 
-      {/* Shortcuts help overlay */}
+      {/* Overlays */}
       {showShortcuts && (
         <ShortcutsPanel onClose={() => setShowShortcuts(false)} />
       )}
-
-      {/* Quick open palette */}
       {showPalette && (
         <CommandPalette onClose={() => setShowPalette(false)} />
       )}
-
-      {/* Global search */}
       {showSearch && (
         <GlobalSearch onClose={() => setShowSearch(false)} />
       )}

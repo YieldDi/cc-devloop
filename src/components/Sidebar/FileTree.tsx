@@ -5,7 +5,13 @@ import { useEditorStore } from "../../stores/editorStore";
 import { detectLanguage } from "../../utils/languageDetect";
 
 function FileIcon({ name, isDir }: { name: string; isDir: boolean }) {
-  if (isDir) return <span className="text-blue mr-1.5">📁</span>;
+  if (isDir) {
+    return (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-cyan/60 mr-1.5 shrink-0">
+        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.879a1.5 1.5 0 0 1 1.06.44l1.122 1.12A1.5 1.5 0 0 0 9.62 4H13.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9z"/>
+      </svg>
+    );
+  }
   const ext = name.split(".").pop()?.toLowerCase() || "";
   const colorMap: Record<string, string> = {
     ts: "text-blue", tsx: "text-blue",
@@ -13,13 +19,20 @@ function FileIcon({ name, isDir }: { name: string; isDir: boolean }) {
     json: "text-yellow",
     css: "text-pink", scss: "text-pink",
     html: "text-orange",
-    py: "text-green", rs: "text-peach",
-    go: "text-teal", java: "text-red",
+    py: "text-green", rs: "text-red",
+    go: "text-cyan", java: "text-red",
     md: "text-overlay0", toml: "text-overlay0",
     yaml: "text-overlay0", yml: "text-overlay0",
   };
   const color = colorMap[ext] || "text-overlay0";
-  return <span className={`${color} mr-1.5 text-xs`}>◆</span>;
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" className={`${color} mr-1.5 shrink-0 opacity-70`}>
+      <rect x="2" y="1" width="12" height="14" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.2"/>
+      <line x1="5" y1="5" x2="11" y2="5" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+      <line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+      <line x1="5" y1="11" x2="9" y2="11" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
+    </svg>
+  );
 }
 
 interface ContextMenuState {
@@ -52,7 +65,6 @@ function ContextMenu({
     };
   }, [onClose]);
 
-  // Clamp position to viewport
   const style: React.CSSProperties = {
     position: "fixed",
     left: menu.x,
@@ -75,16 +87,16 @@ function ContextMenu({
     <div
       ref={ref}
       style={style}
-      className="bg-mantle border border-surface1 rounded-lg shadow-xl py-1 min-w-[140px]"
+      className="bg-mantle border border-surface1/60 rounded-lg shadow-2xl py-1 min-w-[140px] backdrop-blur-sm"
     >
       {items.map((item) => (
         <button
           key={item.id}
           onClick={() => { onAction(item.id, menu.node); onClose(); }}
-          className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+          className={`w-full text-left px-3 py-1.5 text-xs transition-all ${
             item.danger
-              ? "text-red hover:bg-red/10"
-              : "text-text hover:bg-surface0"
+              ? "text-red hover:bg-red/5"
+              : "text-text hover:bg-cyan/5 hover:text-cyan"
           }`}
         >
           {item.label}
@@ -121,7 +133,7 @@ function RenameInput({
           if (e.key === "Escape") onCancel();
         }}
         onBlur={() => { if (name.trim()) onConfirm(name.trim()); else onCancel(); }}
-        className="flex-1 bg-surface0 border border-blue rounded px-1.5 py-0.5 text-xs text-text outline-none"
+        className="flex-1 bg-surface0/60 border border-cyan/30 rounded px-1.5 py-0.5 text-xs text-text outline-none focus:border-cyan/60 transition-colors"
       />
     </div>
   );
@@ -147,7 +159,7 @@ function NewItemInput({
 
   return (
     <div style={{ paddingLeft: `${(depth + 1) * 16 + 8}px` }} className="flex items-center px-2 py-0.5">
-      <span className="text-xs mr-1.5">{isDir ? "📁" : "◆"}</span>
+      <span className="text-xs mr-1.5 text-overlay0">{isDir ? "📁" : "◆"}</span>
       <input
         ref={inputRef}
         value={name}
@@ -158,7 +170,7 @@ function NewItemInput({
         }}
         onBlur={() => { if (name.trim()) onConfirm(name.trim()); else onCancel(); }}
         placeholder={isDir ? "folder name..." : "file name..."}
-        className="flex-1 bg-surface0 border border-blue rounded px-1.5 py-0.5 text-xs text-text placeholder-overlay0 outline-none"
+        className="flex-1 bg-surface0/60 border border-cyan/30 rounded px-1.5 py-0.5 text-xs text-text placeholder-overlay0 outline-none focus:border-cyan/60 transition-colors"
       />
     </div>
   );
@@ -260,18 +272,18 @@ function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
         />
       ) : (
         <div
-          className="flex items-center cursor-pointer hover:bg-surface0 px-2 py-0.5 text-sm truncate"
+          className="flex items-center cursor-pointer hover:bg-cyan/[0.04] px-2 py-[3px] text-sm truncate transition-colors"
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={handleClick}
           onContextMenu={handleContextMenu}
         >
           {node.is_dir && (
-            <span className="text-overlay0 mr-1 text-xs">
-              {loading ? "⟳" : isExpanded ? "▾" : "▸"}
+            <span className="text-overlay0 mr-1 text-[10px] transition-transform" style={{ display: "inline-block", transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}>
+              ▾
             </span>
           )}
           <FileIcon name={node.name} isDir={node.is_dir} />
-          <span className="truncate">{node.name}</span>
+          <span className="truncate text-[13px]">{node.name}</span>
         </div>
       )}
       {node.is_dir && isExpanded && (
@@ -302,20 +314,7 @@ function TreeNode({ node, depth }: { node: FileNode; depth: number }) {
 }
 
 export default function FileTree() {
-  const { tree, refreshRoot, projectRoot } = useProjectStore();
-  const [showNewRoot, setShowNewRoot] = useState<"file" | "folder" | null>(null);
-
-  const handleNewRoot = useCallback(async (name: string) => {
-    if (!projectRoot) return;
-    const isDir = showNewRoot === "folder";
-    try {
-      await invoke("create_file", { path: `${projectRoot}/${name}`, isDir });
-      refreshRoot();
-    } catch (e) {
-      console.error("Create failed:", e);
-    }
-    setShowNewRoot(null);
-  }, [projectRoot, showNewRoot]);
+  const { tree, refreshRoot } = useProjectStore();
 
   if (tree.length === 0) {
     return (
@@ -326,25 +325,11 @@ export default function FileTree() {
   }
 
   return (
-    <div className="overflow-auto flex-1">
-      <div className="flex items-center justify-end gap-1 px-1.5 py-0.5 border-b border-surface1">
-        <button
-          onClick={() => setShowNewRoot("file")}
-          className="text-[10px] text-overlay0 hover:text-text px-1.5 py-0.5 hover:bg-surface0 rounded transition-colors"
-          title="New File"
-        >
-          +File
-        </button>
-        <button
-          onClick={() => setShowNewRoot("folder")}
-          className="text-[10px] text-overlay0 hover:text-text px-1.5 py-0.5 hover:bg-surface0 rounded transition-colors"
-          title="New Folder"
-        >
-          +Folder
-        </button>
+    <div className="overflow-auto flex-1 agent-scroll">
+      <div className="flex items-center justify-end gap-0.5 px-1.5 py-0.5 border-b border-surface1/40">
         <button
           onClick={() => refreshRoot()}
-          className="text-[10px] text-overlay0 hover:text-text px-1.5 py-0.5 hover:bg-surface0 rounded transition-colors"
+          className="text-[10px] text-overlay0 hover:text-cyan px-1.5 py-0.5 hover:bg-cyan/5 rounded transition-all"
           title="Refresh"
         >
           ⟳
@@ -353,15 +338,6 @@ export default function FileTree() {
       {tree.map((node) => (
         <TreeNode key={node.path} node={node} depth={0} />
       ))}
-      {showNewRoot && (
-        <NewItemInput
-          basePath={projectRoot || ""}
-          isDir={showNewRoot === "folder"}
-          depth={-1}
-          onConfirm={handleNewRoot}
-          onCancel={() => setShowNewRoot(null)}
-        />
-      )}
     </div>
   );
 }

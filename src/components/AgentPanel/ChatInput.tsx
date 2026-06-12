@@ -16,7 +16,7 @@ function getToolPath(name: string, input: Record<string, unknown>): string | nul
 let currentMessageId: string | null = null;
 let listenerSetup = false;
 let _unlistenFn: (() => void) | null = null;
-const pendingFileChanges = new Map<string, string>(); // toolUseId → filePath
+const pendingFileChanges = new Map<string, string>();
 
 export default function ChatInput() {
   const isStreaming = useAgentStore((s) => s.isStreaming);
@@ -26,7 +26,6 @@ export default function ChatInput() {
 
   const effectivelyStreaming = isStreaming && currentStream.length > 0;
 
-  // Set up Tauri event listener once
   useEffect(() => {
     if (listenerSetup) return;
     listenerSetup = true;
@@ -58,7 +57,6 @@ export default function ChatInput() {
 
     const store = useAgentStore.getState();
 
-    // Ensure there's an active chat
     if (!store.activeChatId) {
       store.createChat();
     }
@@ -89,7 +87,6 @@ export default function ChatInput() {
     store.setStreaming(true);
 
     try {
-      // Ensure agent started
       const running = await invoke<boolean>("is_agent_running").catch(() => false);
       if (!running) {
         store.setStreaming(false);
@@ -99,7 +96,6 @@ export default function ChatInput() {
         await new Promise((r) => setTimeout(r, 500));
       }
 
-      // Send message
       await invoke("send_agent_message", { content: msg });
     } catch (e) {
       store.addMessage({
@@ -123,7 +119,6 @@ export default function ChatInput() {
     currentMessageId = null;
   };
 
-  // Listen for suggestion clicks from EmptyState
   useEffect(() => {
     const handler = (e: Event) => {
       const text = (e as CustomEvent).detail as string;
@@ -135,7 +130,7 @@ export default function ChatInput() {
 
   return (
     <div className="px-3 pb-3 pt-2">
-      <div className="relative flex items-end bg-surface0 rounded-2xl border border-surface1 focus-within:border-blue transition-colors">
+      <div className="relative flex items-end bg-surface0/50 rounded-xl border border-surface1/50 focus-within:border-cyan/30 focus-within:shadow-[0_0_12px_-3px_rgba(0,229,255,0.15)] transition-all">
         <textarea
           ref={textareaRef}
           value={value}
@@ -157,25 +152,30 @@ export default function ChatInput() {
           {effectivelyStreaming ? (
             <button
               onClick={handleStop}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-red hover:bg-maroon text-crust transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red/10 border border-red/30 hover:bg-red/20 text-red transition-all"
               title="Stop"
             >
-              ■
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                <rect x="1" y="1" width="8" height="8" rx="1"/>
+              </svg>
             </button>
           ) : (
             <button
               onClick={() => handleSend()}
               disabled={!value.trim()}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-blue hover:bg-lavender disabled:opacity-30 disabled:cursor-not-allowed text-crust transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg bg-cyan/10 border border-cyan/30 hover:bg-cyan/20 disabled:opacity-20 disabled:cursor-not-allowed text-cyan transition-all"
               title="Send (⌘+Enter)"
             >
-              ↑
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M3.5 3.75A.75.75 0 0 1 4.25 3h7.5a.75.75 0 0 1 .53 1.28l-3.75 3.75a.75.75 0 0 1-1.06 0L3.72 4.28a.75.75 0 0 1-.22-.53z"/>
+                <path d="M3.5 8.75A.75.75 0 0 1 4.25 8h7.5a.75.75 0 0 1 .53 1.28l-3.75 3.75a.75.75 0 0 1-1.06 0L3.72 9.28a.75.75 0 0 1-.22-.53z"/>
+              </svg>
             </button>
           )}
         </div>
       </div>
-      <div className="text-center mt-1">
-        <span className="text-[10px] text-overlay0">⌘+Enter to send</span>
+      <div className="text-center mt-1.5">
+        <span className="text-[10px] text-overlay0/60 tracking-wide">⌘+Enter to send</span>
       </div>
     </div>
   );
@@ -206,7 +206,6 @@ function handleEventMessage(msg: Record<string, unknown>) {
         timestamp: Date.now(),
       });
 
-      // Track file-changing tools for auto-refresh
       if (FILE_WRITE_TOOLS.has(toolName) && toolId) {
         const filePath = getToolPath(toolName, toolInput);
         if (filePath) {
@@ -221,7 +220,6 @@ function handleEventMessage(msg: Record<string, unknown>) {
         updateToolCallById(toolUseId, (msg.content as string) || "", "completed");
       }
 
-      // Handle file change from tracked tool
       const changedFile = toolUseId ? pendingFileChanges.get(toolUseId) : undefined;
       if (changedFile) {
         pendingFileChanges.delete(toolUseId);
@@ -235,7 +233,6 @@ function handleEventMessage(msg: Record<string, unknown>) {
     case "done":
       finishStream();
       currentMessageId = null;
-      // Flush any remaining pending file changes
       for (const [, filePath] of pendingFileChanges) {
         handleFileChange(filePath);
       }
@@ -268,10 +265,8 @@ function handleEventMessage(msg: Record<string, unknown>) {
 }
 
 function handleFileChange(filePath: string) {
-  // 1. Refresh the file in the editor if it's open
   useEditorStore.getState().refreshFile(filePath);
 
-  // 2. Refresh the file tree
   const { projectRoot, refreshDir, refreshRoot, expandedDirs, toggleDir } = useProjectStore.getState();
   if (projectRoot) {
     const lastSep = Math.max(filePath.lastIndexOf("/"), filePath.lastIndexOf("\\"));
@@ -279,10 +274,8 @@ function handleFileChange(filePath: string) {
     const inProject = parentDir === projectRoot || parentDir.startsWith(projectRoot + "/") || parentDir.startsWith(projectRoot + "\\");
     if (parentDir && inProject) {
       if (parentDir === projectRoot) {
-        // File is directly in project root — refresh the root tree
         refreshRoot();
       } else {
-        // File is in a subdirectory — refresh that directory
         if (!expandedDirs.has(parentDir)) {
           toggleDir(parentDir);
         }

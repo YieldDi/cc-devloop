@@ -11,7 +11,8 @@ export default function ChatPanel() {
     <div className="flex flex-col h-full overflow-hidden">
       <AgentHeader />
       {!agentRunning && hasMessages && (
-        <div className="px-3 py-1.5 text-[11px] text-yellow bg-yellow/10 border-b border-surface1 shrink-0">
+        <div className="px-3 py-1.5 text-[11px] text-yellow bg-yellow/5 border-b border-yellow/10 shrink-0 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow" />
           Agent stopped — sending a message will restart it
         </div>
       )}

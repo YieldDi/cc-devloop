@@ -1,9 +1,7 @@
 @import "tailwindcss";
 @import "highlight.js/styles/github-dark.css";
 
-
-
-/* ── Catppuccin Theme Tokens ── */
+/* ── Cyberpunk Theme Tokens ── */
 @theme {
   --color-crust: var(--c-crust);
   --color-mantle: var(--c-mantle);
@@ -22,92 +20,103 @@
   --color-blue: var(--c-blue);
   --color-lavender: var(--c-lavender);
   --color-flamingo: var(--c-flamingo);
+  --color-cyan: var(--c-cyan);
+  --color-neon: var(--c-neon);
+  --color-glow: var(--c-glow);
 }
 
-/* Catppuccin Mocha (dark — default) */
+/* Dark — Cyberpunk Neon (default) */
 :root {
-  --c-crust: #11111b;
-  --c-mantle: #181825;
-  --c-base: #1e1e2e;
-  --c-surface0: #313244;
-  --c-surface1: #45475a;
-  --c-surface2: #585b70;
-  --c-overlay0: #6c7086;
-  --c-subtext1: #a6adc8;
-  --c-text: #cdd6f4;
-  --c-red: #f38ba8;
-  --c-maroon: #eba0ac;
-  --c-yellow: #f9e2af;
-  --c-green: #a6e3a1;
-  --c-green-light: #94d89a;
-  --c-blue: #89b4fa;
-  --c-lavender: #b4befe;
-  --c-flamingo: #f5e0dc;
+  --c-crust: #06080d;
+  --c-mantle: #0b0e15;
+  --c-base: #0f1219;
+  --c-surface0: #171c28;
+  --c-surface1: #1e2436;
+  --c-surface2: #2a3148;
+  --c-overlay0: #4a5270;
+  --c-subtext1: #9ba3c0;
+  --c-text: #d4daf0;
+  --c-red: #ff4d6a;
+  --c-maroon: #ff7a8a;
+  --c-yellow: #f0c050;
+  --c-green: #3df5a0;
+  --c-green-light: #2ed88a;
+  --c-blue: #4da6ff;
+  --c-lavender: #8b9cf7;
+  --c-flamingo: #f0a0b8;
+  --c-cyan: #00e5ff;
+  --c-neon: #00ffc8;
+  --c-glow: #00e5ff;
 }
 
-/* Catppuccin Latte (light) */
+/* Light — High-contrast clean */
 [data-theme="light"] {
-  --c-crust: #dce0e8;
-  --c-mantle: #e6e9ef;
-  --c-base: #eff1f5;
-  --c-surface0: #ccd0da;
-  --c-surface1: #bcc0cc;
-  --c-surface2: #acb0be;
-  --c-overlay0: #7c7f93;
-  --c-subtext1: #6c6f85;
-  --c-text: #4c4f69;
-  --c-red: #d20f39;
-  --c-maroon: #e64553;
-  --c-yellow: #df8e1d;
-  --c-green: #40a02b;
-  --c-green-light: #50b840;
-  --c-blue: #1e66f5;
-  --c-lavender: #7287fd;
-  --c-flamingo: #dc8a78;
+  --c-crust: #eef0f5;
+  --c-mantle: #e4e7ef;
+  --c-base: #f5f7fb;
+  --c-surface0: #d0d5e2;
+  --c-surface1: #b8bdd0;
+  --c-surface2: #9ea4be;
+  --c-overlay0: #6b7294;
+  --c-subtext1: #4a507a;
+  --c-text: #1a1e36;
+  --c-red: #d01040;
+  --c-maroon: #e0335a;
+  --c-yellow: #c08800;
+  --c-green: #009a58;
+  --c-green-light: #00b868;
+  --c-blue: #0060e0;
+  --c-lavender: #5060e8;
+  --c-flamingo: #d06878;
+  --c-cyan: #0090b8;
+  --c-neon: #007a60;
+  --c-glow: #0060c0;
 }
 
 /* highlight.js light overrides */
 [data-theme="light"] .hljs {
-  background: #dce0e8;
-  color: #4c4f69;
+  background: #eef0f5;
+  color: #1a1e36;
 }
 [data-theme="light"] .hljs-keyword,
 [data-theme="light"] .hljs-selector-tag,
-[data-theme="light"] .hljs-literal { color: #d20f39; }
-[data-theme="light"] .hljs-title { color: #1e66f5; }
+[data-theme="light"] .hljs-literal { color: #d01040; }
+[data-theme="light"] .hljs-title { color: #0060e0; }
 [data-theme="light"] .hljs-string,
-[data-theme="light"] .hljs-addition { color: #40a02b; }
+[data-theme="light"] .hljs-addition { color: #009a58; }
 [data-theme="light"] .hljs-comment,
-[data-theme="light"] .hljs-quote { color: #7c7f93; font-style: italic; }
+[data-theme="light"] .hljs-quote { color: #6b7294; font-style: italic; }
 [data-theme="light"] .hljs-variable,
-[data-theme="light"] .hljs-template-variable { color: #8839ef; }
+[data-theme="light"] .hljs-template-variable { color: #7040c0; }
 [data-theme="light"] .hljs-number,
-[data-theme="light"] .hljs-built_in { color: #fe640b; }
+[data-theme="light"] .hljs-built_in { color: #d06020; }
 [data-theme="light"] .hljs-type,
-[data-theme="light"] .hljs-attr { color: #df8e1d; }
-[data-theme="light"] .hljs-meta { color: #7287fd; }
-[data-theme="light"] .hljs-deletion { color: #d20f39; }
+[data-theme="light"] .hljs-attr { color: #c08800; }
+[data-theme="light"] .hljs-meta { color: #5060e8; }
+[data-theme="light"] .hljs-deletion { color: #d01040; }
 [data-theme="light"] .hljs-symbol,
-[data-theme="light"] .hljs-bullet { color: #179299; }
-[data-theme="light"] .hljs-link { color: #179299; text-decoration: underline; }
+[data-theme="light"] .hljs-bullet { color: #0090b8; }
+[data-theme="light"] .hljs-link { color: #0090b8; text-decoration: underline; }
 
-/* Agent panel scrollbar */
+/* ── Global Styles ── */
+
+/* Sharp, modern scrollbar */
 .agent-scroll::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .agent-scroll::-webkit-scrollbar-track {
-  background: var(--c-mantle);
+  background: transparent;
 }
 .agent-scroll::-webkit-scrollbar-thumb {
-  background: var(--c-surface1);
-  border-radius: 2px;
+  background: var(--c-surface2);
+  border-radius: 3px;
 }
 .agent-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--c-surface2);
+  background: var(--c-cyan);
 }
 .agent-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--c-surface1) var(--c-mantle);
+  scrollbar-color: var(--c-surface2) transparent;
 }
 
 /* Markdown body overrides for chat */
@@ -125,4 +134,83 @@
 .markdown-body hljs {
   background: transparent;
   padding: 0;
+}
+
+/* ── Glow Utilities ── */
+.glow-cyan {
+  box-shadow: 0 0 12px -2px var(--c-glow), 0 0 4px -1px var(--c-glow);
+}
+.glow-cyan-soft {
+  box-shadow: 0 0 20px -4px rgba(0, 229, 255, 0.15);
+}
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 4px rgba(0, 229, 255, 0.3);
+}
+.glow-green {
+  box-shadow: 0 0 8px -1px rgba(61, 245, 160, 0.4);
+}
+
+/* ── Scanline Overlay (subtle) ── */
+.scanline-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 229, 255, 0.015) 2px,
+    rgba(0, 229, 255, 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Animated Border Gradient ── */
+@keyframes border-rotate {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+.border-glow {
+  position: relative;
+}
+.border-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, var(--c-cyan), transparent 40%, transparent 60%, var(--c-neon));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Pulse Dot ── */
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+  50% { opacity: 0.5; box-shadow: 0 0 8px currentColor; }
+}
+.dot-pulse {
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+/* ── Neon Button ── */
+.btn-neon {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.btn-neon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.btn-neon:hover::after {
+  opacity: 1;
 }

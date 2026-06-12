@@ -10,14 +10,49 @@ import { useTerminalStore } from "../../stores/terminalStore";
 
 const TERMINAL_THEMES = {
   dark: {
-    background: "#181825",
-    foreground: "#cdd6f4",
-    cursor: "#f5e0dc",
+    background: "#0b0e15",
+    foreground: "#d4daf0",
+    cursor: "#00e5ff",
+    cursorAccent: "#0f1219",
+    selectionBackground: "#00e5ff25",
+    black: "#0b0e15",
+    red: "#ff4d6a",
+    green: "#3df5a0",
+    yellow: "#f0c050",
+    blue: "#4da6ff",
+    magenta: "#8b9cf7",
+    cyan: "#00e5ff",
+    white: "#d4daf0",
+    brightBlack: "#4a5270",
+    brightRed: "#ff7a8a",
+    brightGreen: "#3df5a0",
+    brightYellow: "#f0c050",
+    brightBlue: "#4da6ff",
+    brightMagenta: "#8b9cf7",
+    brightCyan: "#00e5ff",
+    brightWhite: "#d4daf0",
   },
   light: {
-    background: "#e6e9ef",
-    foreground: "#4c4f69",
-    cursor: "#dc8a78",
+    background: "#eef0f5",
+    foreground: "#1a1e36",
+    cursor: "#0060c0",
+    selectionBackground: "#0060c020",
+    black: "#1a1e36",
+    red: "#d01040",
+    green: "#009a58",
+    yellow: "#c08800",
+    blue: "#0060e0",
+    magenta: "#5060e8",
+    cyan: "#0090b8",
+    white: "#1a1e36",
+    brightBlack: "#6b7294",
+    brightRed: "#e0335a",
+    brightGreen: "#00b868",
+    brightYellow: "#d8a020",
+    brightBlue: "#2080ff",
+    brightMagenta: "#6070f0",
+    brightCyan: "#00a8d0",
+    brightWhite: "#1a1e36",
   },
 };
 
@@ -167,12 +202,12 @@ export default function TerminalPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Tab bar */}
-      <div className="flex items-center bg-surface0 border-b border-surface1 shrink-0 overflow-x-auto">
+      <div className="flex items-center bg-surface0/30 border-b border-surface1/40 shrink-0 overflow-x-auto">
         {tabs.map((tab) => (
           <div
             key={tab.id}
             onClick={() => setActive(tab.id)}
-            className={`flex items-center gap-1 px-2 py-1 text-[11px] cursor-pointer border-r border-surface1 shrink-0 ${
+            className={`flex items-center gap-1 px-2 py-1 text-[11px] cursor-pointer border-r border-surface1/30 shrink-0 transition-all ${
               tab.id === effectiveActive
                 ? "bg-mantle text-text"
                 : "text-overlay0 hover:text-text"
@@ -184,14 +219,14 @@ export default function TerminalPanel() {
                 onClick={(e) => handleClose(tab.id, e)}
                 className="text-overlay0 hover:text-red transition-colors ml-0.5"
               >
-                x
+                ×
               </button>
             )}
           </div>
         ))}
         <button
           onClick={handleAdd}
-          className="px-2 py-1 text-[11px] text-overlay0 hover:text-text transition-colors shrink-0"
+          className="px-2 py-1 text-[11px] text-overlay0 hover:text-cyan transition-colors shrink-0"
           title="New Terminal"
         >
           +

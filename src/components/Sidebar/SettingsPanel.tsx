@@ -55,10 +55,10 @@ function AppearanceSection() {
             <button
               key={t}
               onClick={() => setTheme(t)}
-              className={`flex-1 px-3 py-2.5 text-xs rounded-lg border transition-colors capitalize ${
+              className={`flex-1 px-3 py-2.5 text-xs rounded-lg border transition-all capitalize ${
                 theme === t
-                  ? "bg-blue text-crust border-blue font-medium"
-                  : "bg-surface0 text-text border-surface1 hover:border-surface2"
+                  ? "bg-cyan/10 text-cyan border-cyan/30 font-medium glow-cyan-soft"
+                  : "bg-surface0/50 text-text border-surface1/50 hover:border-surface2"
               }`}
             >
               {t}
@@ -202,12 +202,12 @@ export default function SettingsPanel({ trigger }: { trigger?: React.ReactNode }
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setOpen(false)}>
           {/* Settings modal — centered */}
           <div
-            className="w-[520px] h-[480px] bg-mantle border border-surface1 rounded-xl flex flex-col shadow-2xl"
+            className="w-[520px] h-[480px] bg-mantle border border-surface1/60 rounded-xl flex flex-col shadow-2xl backdrop-blur-sm"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-surface1 shrink-0">
-              <h2 className="text-sm font-semibold text-text">Settings</h2>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-surface1/60 shrink-0 bg-gradient-to-r from-cyan/[0.03] to-transparent">
+              <h2 className="text-sm font-semibold text-text tracking-wide">Settings</h2>
               <button
                 onClick={() => setOpen(false)}
                 className="text-overlay0 hover:text-text transition-colors p-1 rounded hover:bg-surface0"
@@ -220,15 +220,15 @@ export default function SettingsPanel({ trigger }: { trigger?: React.ReactNode }
 
             <div className="flex flex-1 min-h-0">
               {/* Left nav */}
-              <div className="w-[130px] border-r border-surface1 py-2 shrink-0">
+              <div className="w-[130px] border-r border-surface1/40 py-2 shrink-0">
                 {SECTIONS.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setSection(s.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-all ${
                       section === s.id
-                        ? "text-text bg-surface0"
-                        : "text-overlay0 hover:text-text hover:bg-surface0/50"
+                        ? "text-cyan bg-cyan/5 border-l-2 border-l-cyan"
+                        : "text-overlay0 hover:text-text hover:bg-surface0/30 border-l-2 border-l-transparent"
                     }`}
                   >
                     <SectionIcon type={s.icon} />

@@ -73,9 +73,9 @@ export default function StatusBar() {
   };
 
   return (
-    <div className="shrink-0 border-t border-surface1">
+    <div className="shrink-0 border-t border-surface1/60">
       {showCommit && (
-        <div className="flex items-center gap-2 h-7 px-2 bg-surface0 border-b border-surface1">
+        <div className="flex items-center gap-2 h-7 px-2 bg-surface0/80 border-b border-surface1/60">
           <input
             ref={inputRef}
             value={message}
@@ -85,13 +85,13 @@ export default function StatusBar() {
               if (e.key === "Escape") { setShowCommit(false); setMessage(""); }
             }}
             placeholder="Commit message... (⌘+Enter to commit)"
-            className="flex-1 bg-mantle border border-surface1 rounded px-2 py-0.5 text-[11px] text-text placeholder-overlay0 outline-none focus:border-blue transition-colors"
+            className="flex-1 bg-mantle border border-surface1 rounded px-2 py-0.5 text-[11px] text-text placeholder-overlay0 outline-none focus:border-cyan transition-colors font-mono"
             disabled={committing}
           />
           <button
             onClick={handleCommit}
             disabled={!message.trim() || committing || totalChanges === 0}
-            className="px-2 py-0.5 text-[11px] bg-blue hover:bg-lavender disabled:opacity-30 disabled:cursor-not-allowed text-crust rounded transition-colors shrink-0"
+            className="px-2 py-0.5 text-[11px] bg-cyan/10 border border-cyan/30 hover:bg-cyan/20 disabled:opacity-30 disabled:cursor-not-allowed text-cyan rounded transition-all shrink-0"
           >
             {committing ? "..." : "Commit"}
           </button>
@@ -104,16 +104,18 @@ export default function StatusBar() {
         </div>
       )}
 
-      <div className="flex items-center justify-between h-6 px-2 bg-surface0 text-[11px] text-overlay0 select-none">
+      <div className="flex items-center justify-between h-6 px-2 bg-surface0/40 text-[11px] text-overlay0 select-none">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-yellow animate-pulse" : "bg-green"}`} />
-            <span>{isStreaming ? "Agent working..." : "Agent ready"}</span>
+          {/* Agent status */}
+          <span className="flex items-center gap-1.5">
+            <span className={`w-1.5 h-1.5 rounded-full ${isStreaming ? "bg-yellow dot-pulse" : "bg-green glow-green"}`} />
+            <span>{isStreaming ? "Agent working" : "Ready"}</span>
           </span>
 
+          {/* Terminal toggle */}
           <button
             onClick={toggleTerminal}
-            className={`flex items-center gap-1 px-1.5 rounded transition-colors ${showTerminal ? "text-text bg-surface1" : "text-overlay0 hover:text-text hover:bg-surface1"}`}
+            className={`flex items-center gap-1 px-1.5 rounded transition-all ${showTerminal ? "text-cyan" : "text-overlay0 hover:text-text hover:bg-surface0/50"}`}
             title={showTerminal ? "Hide Terminal (⌘`)" : "Show Terminal (⌘`)"}
           >
             <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
@@ -122,26 +124,27 @@ export default function StatusBar() {
             <span>Term</span>
           </button>
 
+          {/* Git info */}
           {git && (
             <button
               onClick={() => setShowCommit(!showCommit)}
-              className="flex items-center gap-1.5 px-1.5 rounded hover:text-text hover:bg-surface1 transition-colors"
+              className="flex items-center gap-1.5 px-1.5 rounded hover:text-text hover:bg-surface0/50 transition-all"
             >
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" className="text-blue">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" className="text-cyan">
                 <path d="M11.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zm-2.25.75a2.25 2.25 0 1 1 3 2.12V6A2.5 2.5 0 0 1 10 8.5H6A1 1 0 0 0 5 9.5v.879a2.25 2.25 0 1 1-1.5 0V9.5A2.5 2.5 0 0 1 6 7h4A1 1 0 0 0 11 6V5.37a2.25 2.25 0 0 1-1.5-2.12zM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z"/>
               </svg>
-              <span className="text-blue">{git.branch}</span>
+              <span className="text-cyan">{git.branch}</span>
               {git.ahead > 0 && <span className="text-green">↑{git.ahead}</span>}
               {git.behind > 0 && <span className="text-red">↓{git.behind}</span>}
               {totalChanges > 0 && <span className="text-yellow">●{totalChanges}</span>}
             </button>
           )}
 
-          {/* View changes button */}
+          {/* View changes */}
           {git && totalChanges > 0 && (
             <button
               onClick={() => setShowChanges(true)}
-              className="flex items-center gap-1 px-1.5 rounded text-overlay0 hover:text-text hover:bg-surface1 transition-colors"
+              className="flex items-center gap-1 px-1.5 rounded text-overlay0 hover:text-text hover:bg-surface0/50 transition-all"
               title="View uncommitted changes"
             >
               <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
@@ -153,7 +156,7 @@ export default function StatusBar() {
 
           {!git && projectName && (
             <span className="flex items-center gap-1">
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" className="opacity-60">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" className="opacity-40">
                 <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.879a1.5 1.5 0 0 1 1.06.44l1.122 1.12A1.5 1.5 0 0 0 9.62 4H13.5A1.5 1.5 0 0 1 15 5.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12.5v-9z"/>
               </svg>
               {projectName}
@@ -162,7 +165,7 @@ export default function StatusBar() {
         </div>
 
         <div className="flex items-center gap-3">
-          {langLabel && <span>{langLabel}</span>}
+          {langLabel && <span className="text-overlay0">{langLabel}</span>}
         </div>
       </div>
 

@@ -27,12 +27,11 @@ function KeyRecorder({
     }
 
     const mod = e.metaKey || e.ctrlKey;
-    if (!mod) return; // Require modifier key
+    if (!mod) return;
 
     let keys = "⌘";
     if (e.shiftKey) keys += "⇧";
     const key = e.key.toUpperCase();
-    // Ignore pure modifier keys
     if (["META", "CONTROL", "SHIFT", "ALT"].includes(e.key)) return;
     keys += key;
 
@@ -44,7 +43,7 @@ function KeyRecorder({
       ref={ref}
       onKeyDown={handleKeyDown}
       onBlur={onCancel}
-      className="px-1.5 py-0.5 bg-blue/20 text-blue rounded border border-blue/40 text-[11px] font-mono outline-none"
+      className="px-1.5 py-0.5 bg-cyan/10 text-cyan rounded border border-cyan/30 text-[11px] font-mono outline-none"
     >
       {recording ? "Press shortcut..." : current}
     </button>
@@ -74,24 +73,23 @@ export default function ShortcutsPanel({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("mousedown", handler);
   }, [onClose]);
 
-  // Group by category
   const categories = bindings.reduce<Record<string, ShortcutBinding[]>>((acc, s) => {
     (acc[s.category] ??= []).push(s);
     return acc;
   }, {});
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(6,8,13,0.7)", backdropFilter: "blur(4px)" }}>
       <div
         ref={panelRef}
-        className="bg-mantle border border-surface1 rounded-xl shadow-2xl w-[420px] max-h-[80vh] overflow-auto"
+        className="bg-mantle/95 border border-surface1/50 rounded-xl shadow-2xl w-[420px] max-h-[80vh] overflow-auto glow-cyan-soft"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-surface1">
-          <h2 className="text-sm font-semibold text-text">Keyboard Shortcuts</h2>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-surface1/40 bg-gradient-to-r from-cyan/[0.03] to-transparent">
+          <h2 className="text-sm font-semibold text-text tracking-wide">Keyboard Shortcuts</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={resetAll}
-              className="text-[10px] text-overlay0 hover:text-text transition-colors px-1.5 py-0.5 rounded hover:bg-surface0"
+              className="text-[10px] text-overlay0 hover:text-cyan transition-colors px-1.5 py-0.5 rounded hover:bg-surface0/50 tracking-wide"
             >
               Reset All
             </button>
@@ -107,15 +105,15 @@ export default function ShortcutsPanel({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="px-4 py-3 space-y-4">
-          <p className="text-[10px] text-overlay0">Click a shortcut to edit. Press a new key combination with ⌘ to rebind.</p>
+          <p className="text-[10px] text-overlay0/60">Click a shortcut to edit. Press a new key combination with ⌘ to rebind.</p>
 
           {Object.entries(categories).map(([category, shortcuts]) => (
             <div key={category}>
-              <div className="text-[10px] uppercase tracking-wider text-overlay0 mb-1.5">{category}</div>
+              <div className="text-[10px] uppercase tracking-widest text-overlay0/60 mb-1.5">{category}</div>
               <div className="space-y-1">
                 {shortcuts.map((s) => (
                   <div key={s.id} className="flex items-center justify-between py-1">
-                    <span className="text-xs text-subtext0">{s.label}</span>
+                    <span className="text-xs text-subtext1">{s.label}</span>
                     <div className="flex items-center gap-1.5">
                       {editingId === s.id ? (
                         <KeyRecorder
@@ -129,7 +127,7 @@ export default function ShortcutsPanel({ onClose }: { onClose: () => void }) {
                       ) : (
                         <button
                           onClick={() => setEditingId(s.id)}
-                          className="text-[11px] px-1.5 py-0.5 bg-surface0 rounded border border-surface1 text-text font-mono hover:border-blue transition-colors"
+                          className="text-[11px] px-1.5 py-0.5 bg-surface0/50 rounded border border-surface1/40 text-text font-mono hover:border-cyan/30 transition-all"
                         >
                           {s.keys}
                         </button>
@@ -137,7 +135,7 @@ export default function ShortcutsPanel({ onClose }: { onClose: () => void }) {
                       {s.keys !== s.defaultKeys && (
                         <button
                           onClick={() => resetBinding(s.id)}
-                          className="text-[10px] text-overlay0 hover:text-text transition-colors"
+                          className="text-[10px] text-overlay0/60 hover:text-text transition-colors"
                           title="Reset to default"
                         >
                           ↺

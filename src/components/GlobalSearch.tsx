@@ -77,17 +77,16 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Group results by file
   const grouped = results.reduce<Record<string, SearchResult[]>>((acc, r) => {
     (acc[r.path] ??= []).push(r);
     return acc;
   }, {});
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-[600px] bg-mantle border border-surface1 rounded-xl shadow-2xl overflow-hidden">
-        <div className="flex items-center px-3 py-2 border-b border-surface1">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-overlay0 shrink-0">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" style={{ background: "rgba(6,8,13,0.7)", backdropFilter: "blur(4px)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-[600px] bg-mantle/95 border border-surface1/50 rounded-xl shadow-2xl overflow-hidden glow-cyan-soft">
+        <div className="flex items-center px-3 py-2.5 border-b border-surface1/40">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-cyan/60 shrink-0">
             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
           </svg>
           <input
@@ -96,15 +95,15 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search in project files..."
-            className="flex-1 bg-transparent px-2 py-1 text-sm text-text placeholder-overlay0 outline-none"
+            className="flex-1 bg-transparent px-2 py-1 text-sm text-text placeholder-overlay0/60 outline-none"
           />
-          {loading && <span className="text-[10px] text-overlay0">...</span>}
-          <kbd className="text-[10px] px-1.5 py-0.5 bg-surface0 rounded border border-surface1 text-overlay0 shrink-0">Esc</kbd>
+          {loading && <span className="text-[10px] text-cyan/40">●</span>}
+          <kbd className="text-[10px] px-1.5 py-0.5 bg-surface0/50 rounded border border-surface1/40 text-overlay0/60 shrink-0">Esc</kbd>
         </div>
 
-        <div className="max-h-[350px] overflow-y-auto">
+        <div className="max-h-[350px] overflow-y-auto agent-scroll">
           {query.trim().length >= 2 && results.length === 0 && !loading && (
-            <div className="px-3 py-4 text-xs text-overlay0 text-center">No results found</div>
+            <div className="px-3 py-4 text-xs text-overlay0/60 text-center">No results found</div>
           )}
 
           {Object.entries(grouped).map(([filePath, matches]) => {
@@ -114,14 +113,13 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
 
             return (
               <div key={filePath}>
-                <div className="flex items-center gap-2 px-3 py-1 bg-surface0/50 text-[11px] text-subtext0 sticky top-0">
+                <div className="flex items-center gap-2 px-3 py-1 bg-surface0/20 text-[11px] text-subtext1 sticky top-0 border-b border-surface1/20">
                   <span className="text-text font-medium">{fileName}</span>
-                  {dir && <span className="text-overlay0 truncate">{dir}</span>}
-                  <span className="text-overlay0 ml-auto">{matches.length}</span>
+                  {dir && <span className="text-overlay0/60 truncate">{dir}</span>}
+                  <span className="text-overlay0/60 ml-auto">{matches.length}</span>
                 </div>
                 {matches.map((m, mi) => {
                   const idx = selected;
-                  // Compute flat index
                   let flatIdx = 0;
                   for (const [, ms] of Object.entries(grouped)) {
                     if (ms === matches) {
@@ -134,12 +132,12 @@ export default function GlobalSearch({ onClose }: { onClose: () => void }) {
                     <div
                       key={`${m.path}:${m.line}`}
                       onClick={() => handleSelect(m)}
-                      className={`flex items-start gap-2 px-3 py-1 cursor-pointer text-xs ${
-                        flatIdx === idx ? "bg-blue/20 text-text" : "text-subtext0 hover:bg-surface0/50"
+                      className={`flex items-start gap-2 px-3 py-1 cursor-pointer text-xs transition-all ${
+                        flatIdx === idx ? "bg-cyan/8 text-cyan" : "text-subtext1 hover:bg-surface0/30"
                       }`}
                       onMouseEnter={() => setSelected(flatIdx)}
                     >
-                      <span className="text-overlay0 shrink-0 w-6 text-right">{m.line}</span>
+                      <span className="text-overlay0/60 shrink-0 w-6 text-right">{m.line}</span>
                       <span className="truncate flex-1">{m.text}</span>
                     </div>
                   );

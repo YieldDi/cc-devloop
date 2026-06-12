@@ -14,15 +14,15 @@ export default function Breadcrumbs() {
   const segments = relative.split("/");
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-1 bg-base border-b border-surface1 text-[11px] text-overlay0 select-none overflow-hidden shrink-0">
+    <div className="flex items-center gap-0.5 px-3 py-1 bg-crust/50 border-b border-surface1/30 text-[11px] text-overlay0 select-none overflow-hidden shrink-0">
       {segments.map((seg, i) => (
         <span key={i} className="flex items-center gap-0.5">
           {i > 0 && (
-            <svg width="8" height="8" viewBox="0 0 16 16" fill="currentColor" className="text-surface1 opacity-60">
+            <svg width="8" height="8" viewBox="0 0 16 16" className="text-surface2 opacity-60">
               <path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           )}
-          <span className={i === segments.length - 1 ? "text-text" : "hover:text-text cursor-default transition-colors"}>
+          <span className={`${i === segments.length - 1 ? "text-cyan" : "hover:text-subtext1"} transition-colors`}>
             {seg}
           </span>
         </span>

@@ -34,22 +34,22 @@ export default function DiffEditorView({
   return (
     <div className="flex flex-col h-full">
       {/* Diff header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-mantle border-b border-surface1">
+      <div className="flex items-center justify-between px-4 py-2 bg-mantle border-b border-surface1/60">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-yellow">⟳</span>
+          <span className="text-xs text-yellow dot-pulse">●</span>
           <span className="text-sm text-text">{fileName}</span>
           <span className="text-xs text-overlay0">— Changes</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={onAccept}
-            className="px-3 py-1 text-xs bg-green hover:bg-green-light text-crust rounded-lg font-medium transition-colors"
+            className="px-3 py-1 text-xs bg-green/10 border border-green/30 text-green hover:bg-green/20 rounded-lg font-medium transition-all"
           >
             Accept
           </button>
           <button
             onClick={onReject}
-            className="px-3 py-1 text-xs bg-surface1 hover:bg-surface2 text-text rounded-lg font-medium transition-colors"
+            className="px-3 py-1 text-xs bg-surface0/50 border border-surface1/50 text-text hover:bg-surface0 rounded-lg font-medium transition-all"
           >
             Close
           </button>

@@ -94,10 +94,10 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] bg-black/40" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-[520px] bg-mantle border border-surface1 rounded-xl shadow-2xl overflow-hidden">
-        <div className="flex items-center px-3 py-2 border-b border-surface1">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-overlay0 shrink-0">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" style={{ background: "rgba(6,8,13,0.7)", backdropFilter: "blur(4px)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-[520px] bg-mantle/95 border border-surface1/50 rounded-xl shadow-2xl overflow-hidden glow-cyan-soft">
+        <div className="flex items-center px-3 py-2.5 border-b border-surface1/40">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-cyan/60 shrink-0">
             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/>
           </svg>
           <input
@@ -106,14 +106,14 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search files by name..."
-            className="flex-1 bg-transparent px-2 py-1 text-sm text-text placeholder-overlay0 outline-none"
+            className="flex-1 bg-transparent px-2 py-1 text-sm text-text placeholder-overlay0/60 outline-none"
           />
-          <kbd className="text-[10px] px-1.5 py-0.5 bg-surface0 rounded border border-surface1 text-overlay0 shrink-0">Esc</kbd>
+          <kbd className="text-[10px] px-1.5 py-0.5 bg-surface0/50 rounded border border-surface1/40 text-overlay0/60 shrink-0">Esc</kbd>
         </div>
 
-        <div className="max-h-[300px] overflow-y-auto">
+        <div className="max-h-[300px] overflow-y-auto agent-scroll">
           {filtered.length === 0 && (
-            <div className="px-3 py-4 text-xs text-overlay0 text-center">No files found</div>
+            <div className="px-3 py-4 text-xs text-overlay0/60 text-center">No files found</div>
           )}
           {filtered.map((file, i) => {
             const relative = projectRoot ? file.path.slice(projectRoot.length + 1) : file.path;
@@ -122,13 +122,13 @@ export default function CommandPalette({ onClose }: { onClose: () => void }) {
               <div
                 key={file.path}
                 onClick={() => handleSelect(file.path)}
-                className={`flex items-center justify-between px-3 py-1.5 cursor-pointer text-xs ${
-                  i === selected ? "bg-surface0 text-text" : "text-subtext0 hover:bg-surface0/50"
+                className={`flex items-center justify-between px-3 py-1.5 cursor-pointer text-xs transition-all ${
+                  i === selected ? "bg-cyan/8 text-cyan" : "text-subtext1 hover:bg-surface0/30"
                 }`}
                 onMouseEnter={() => setSelected(i)}
               >
                 <span className="truncate">{file.name}</span>
-                {dir && <span className="text-overlay0 truncate ml-2 text-[10px] shrink-0">{dir}</span>}
+                {dir && <span className="text-overlay0/60 truncate ml-2 text-[10px] shrink-0 font-mono">{dir}</span>}
               </div>
             );
           })}

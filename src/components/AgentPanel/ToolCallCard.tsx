@@ -22,7 +22,7 @@ function getToolLabel(tc: ToolCallInfo): string {
 }
 
 const statusConfig = {
-  running: { icon: "●", color: "text-yellow", label: "Running" },
+  running: { icon: "●", color: "text-cyan", label: "Running" },
   completed: { icon: "✓", color: "text-green", label: "Done" },
   error: { icon: "✗", color: "text-red", label: "Error" },
 };
@@ -32,28 +32,28 @@ export default function ToolCallCard({ toolCall }: { toolCall: ToolCallInfo }) {
   const status = statusConfig[toolCall.status];
 
   return (
-    <div className="my-2 border border-surface1 rounded-lg overflow-hidden">
+    <div className="my-2 border border-surface1/50 rounded-lg overflow-hidden bg-surface0/20">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface0 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-surface0/40 transition-all"
       >
         <span>{getToolIcon(toolCall.name)}</span>
-        <span className="text-subtext1 truncate">{getToolLabel(toolCall)}</span>
+        <span className="text-subtext1 truncate font-mono">{getToolLabel(toolCall)}</span>
         <span className={`ml-auto ${status.color}`}>
           {status.icon}
         </span>
         <span className="text-overlay0">{expanded ? "▾" : "▸"}</span>
       </button>
       {expanded && (
-        <div className="px-3 py-2 border-t border-surface1 bg-crust">
+        <div className="px-3 py-2 border-t border-surface1/40 bg-crust/50">
           {toolCall.status === "running" && (
-            <div className="flex items-center gap-2 text-xs text-yellow mb-2">
-              <span className="animate-spin">⟳</span> Running...
+            <div className="flex items-center gap-2 text-xs text-cyan mb-2">
+              <span className="dot-pulse text-cyan">●</span> Running...
             </div>
           )}
           {Object.keys(toolCall.input).length > 0 && (
             <div className="mb-2">
-              <div className="text-[10px] text-overlay0 mb-1">Input</div>
+              <div className="text-[10px] text-overlay0 mb-1 uppercase tracking-widest">Input</div>
               <pre className="text-xs text-subtext1 font-mono whitespace-pre-wrap break-all">
                 {JSON.stringify(toolCall.input, null, 2)}
               </pre>
@@ -61,7 +61,7 @@ export default function ToolCallCard({ toolCall }: { toolCall: ToolCallInfo }) {
           )}
           {toolCall.output && (
             <div>
-              <div className="text-[10px] text-overlay0 mb-1">Output</div>
+              <div className="text-[10px] text-overlay0 mb-1 uppercase tracking-widest">Output</div>
               <pre className="text-xs text-subtext1 font-mono whitespace-pre-wrap break-all max-h-40 overflow-y-auto">
                 {toolCall.output.length > 500
                   ? toolCall.output.substring(0, 500) + "..."

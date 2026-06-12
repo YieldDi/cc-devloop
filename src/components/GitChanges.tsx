@@ -13,10 +13,10 @@ interface DiffFile {
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-  M: { label: "M", color: "text-yellow", bg: "bg-yellow/10" },
-  A: { label: "A", color: "text-green", bg: "bg-green/10" },
-  D: { label: "D", color: "text-red", bg: "bg-red/10" },
-  "?": { label: "U", color: "text-overlay0", bg: "bg-surface0" },
+  M: { label: "M", color: "text-yellow", bg: "bg-yellow/5" },
+  A: { label: "A", color: "text-green", bg: "bg-green/5" },
+  D: { label: "D", color: "text-red", bg: "bg-red/5" },
+  "?": { label: "U", color: "text-overlay0", bg: "bg-surface0/30" },
 };
 
 interface FileTreeNode {
@@ -82,7 +82,7 @@ function FileTree({
           return (
             <div key={node.name}>
               <div
-                className="px-2 py-1 text-[11px] text-overlay0 truncate"
+                className="px-2 py-1 text-[11px] text-overlay0/60 truncate"
                 style={{ paddingLeft: `${depth * 16 + 8}px` }}
               >
                 {node.name}/
@@ -102,8 +102,8 @@ function FileTree({
           <button
             key={node.fullPath}
             onClick={() => onSelect(node.fullPath!)}
-            className={`w-full flex items-center gap-2 px-2 py-1 text-xs transition-colors ${
-              isSelected ? "bg-blue/10 text-text" : "text-subtext0 hover:bg-surface0"
+            className={`w-full flex items-center gap-2 px-2 py-1 text-xs transition-all ${
+              isSelected ? "bg-cyan/5 text-cyan border-l-2 border-l-cyan" : "text-subtext1 hover:bg-surface0/30 border-l-2 border-l-transparent"
             }`}
             style={{ paddingLeft: `${depth * 16 + 8}px` }}
           >
@@ -166,7 +166,6 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
 
   const tree = useMemo(() => buildTree(files), [files]);
 
-  // Auto-select first file
   useEffect(() => {
     if (files.length > 0 && !selectedPath) {
       handleSelect(files[0].path);
@@ -196,7 +195,6 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Open selected file in the main editor
   const handleEditFile = async () => {
     if (!selectedPath || !projectRoot) return;
     const fullPath = `${projectRoot}/${selectedPath}`;
@@ -209,7 +207,6 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Navigate to prev/next diff change
   const navigateDiff = (direction: "next" | "prev") => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -221,7 +218,6 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
     action?.run();
   };
 
-  // Flattened tree order for navigation
   const orderedPaths = useMemo(() => flattenTree(tree), [tree]);
   const selectedIdx = orderedPaths.indexOf(selectedPath || "");
   const selectFile = (idx: number) => {
@@ -232,28 +228,28 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
   const currentStats = files.find((f) => f.path === selectedPath);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="w-[85vw] h-[80vh] bg-mantle border border-surface1 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(6,8,13,0.7)", backdropFilter: "blur(4px)" }} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="w-[85vw] h-[80vh] bg-mantle/95 border border-surface1/50 rounded-xl shadow-2xl flex flex-col overflow-hidden glow-cyan-soft">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface1 shrink-0">
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface1/40 shrink-0 bg-gradient-to-r from-cyan/[0.03] to-transparent">
           <div className="flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-blue">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" className="text-cyan">
               <path d="M11.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5zm-2.25.75a2.25 2.25 0 1 1 3 2.12V6A2.5 2.5 0 0 1 10 8.5H6A1 1 0 0 0 5 9.5v.879a2.25 2.25 0 1 1-1.5 0V9.5A2.5 2.5 0 0 1 6 7h4A1 1 0 0 0 11 6V5.37a2.25 2.25 0 0 1-1.5-2.12zM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z"/>
             </svg>
-            <h2 className="text-sm font-semibold text-text">Uncommitted Changes</h2>
-            <span className="text-xs text-overlay0">{files.length} file{files.length !== 1 ? "s" : ""}</span>
+            <h2 className="text-sm font-semibold text-text tracking-wide">Uncommitted Changes</h2>
+            <span className="text-xs text-overlay0/60">{files.length} file{files.length !== 1 ? "s" : ""}</span>
           </div>
-          <button onClick={onClose} className="text-overlay0 hover:text-text transition-colors p-1 rounded hover:bg-surface0">
+          <button onClick={onClose} className="text-overlay0 hover:text-text transition-colors p-1 rounded hover:bg-surface0/50">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M1 1l12 12M13 1L1 13"/>
             </svg>
           </button>
         </div>
 
-        {/* Body: file tree | diff */}
+        {/* Body */}
         <div className="flex flex-1 min-h-0">
           {/* Left: file tree */}
-          <div className="w-[240px] border-r border-surface1 overflow-y-auto shrink-0 bg-surface0/30">
+          <div className="w-[240px] border-r border-surface1/40 overflow-y-auto shrink-0 bg-crust/30 agent-scroll">
             <div className="py-1">
               <FileTree nodes={tree} selectedPath={selectedPath} onSelect={handleSelect} />
             </div>
@@ -263,17 +259,16 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
           <div className="flex-1 flex flex-col min-w-0">
             {selectedPath ? (
               <>
-                <div className="flex items-center gap-2 px-3 py-1.5 border-b border-surface1 shrink-0 bg-surface0/30">
+                <div className="flex items-center gap-2 px-3 py-1.5 border-b border-surface1/30 shrink-0 bg-surface0/20">
                   <span className="text-xs text-text font-medium">{fileName}</span>
-                  <span className="text-[10px] text-overlay0 truncate flex-1">{selectedPath}</span>
+                  <span className="text-[10px] text-overlay0/60 truncate flex-1 font-mono">{selectedPath}</span>
                   {currentStats && (currentStats.added > 0 || currentStats.deleted > 0) && (
                     <span className="text-[10px] font-mono space-x-1 shrink-0">
                       {currentStats.added > 0 && <span className="text-green">+{currentStats.added}</span>}
                       {currentStats.deleted > 0 && <span className="text-red">-{currentStats.deleted}</span>}
                     </span>
                   )}
-                  {/* Prev/Next file */}
-                  <div className="flex items-center gap-0.5 shrink-0 border-l border-surface1 pl-2 ml-1">
+                  <div className="flex items-center gap-0.5 shrink-0 border-l border-surface1/30 pl-2 ml-1">
                     <button
                       onClick={() => selectFile(selectedIdx - 1)}
                       disabled={selectedIdx <= 0}
@@ -282,7 +277,7 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
                     >
                       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M11 2L5 8l6 6"/></svg>
                     </button>
-                    <span className="text-[10px] text-overlay0">{selectedIdx + 1}/{orderedPaths.length}</span>
+                    <span className="text-[10px] text-overlay0/60">{selectedIdx + 1}/{orderedPaths.length}</span>
                     <button
                       onClick={() => selectFile(selectedIdx + 1)}
                       disabled={selectedIdx >= orderedPaths.length - 1}
@@ -292,9 +287,8 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
                       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M5 2l6 6-6 6"/></svg>
                     </button>
                   </div>
-                  {/* Prev/Next diff hunk */}
                   {!loading && original !== modified && (
-                    <div className="flex items-center gap-0.5 shrink-0 border-l border-surface1 pl-2">
+                    <div className="flex items-center gap-0.5 shrink-0 border-l border-surface1/30 pl-2">
                       <button
                         onClick={() => navigateDiff("prev")}
                         className="p-1 text-overlay0 hover:text-text transition-colors"
@@ -311,19 +305,18 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
                   )}
-                  {/* Edit file button */}
                   <button
                     onClick={handleEditFile}
-                    className="shrink-0 px-2 py-0.5 text-[11px] bg-blue/20 text-blue rounded hover:bg-blue/30 transition-colors border-l border-surface1 pl-2 ml-1"
+                    className="shrink-0 px-2 py-0.5 text-[11px] bg-cyan/10 border border-cyan/30 text-cyan rounded hover:bg-cyan/20 transition-all"
                     title="Open in editor"
                   >
                     Edit
                   </button>
-                  {loading && <span className="text-overlay0 animate-spin text-xs ml-auto">⟳</span>}
+                  {loading && <span className="text-cyan/40 text-xs ml-auto dot-pulse">●</span>}
                 </div>
                 <div className="flex-1 min-h-0">
                   {error && (
-                    <div className="px-3 py-2 text-xs text-red bg-red/10 border-b border-surface1">
+                    <div className="px-3 py-2 text-xs text-red bg-red/5 border-b border-red/10">
                       Error: {error}
                     </div>
                   )}
@@ -348,7 +341,7 @@ export default function GitChanges({ onClose }: { onClose: () => void }) {
                 </div>
               </>
             ) : (
-              <div className="flex items-center justify-center h-full text-xs text-overlay0">
+              <div className="flex items-center justify-center h-full text-xs text-overlay0/60">
                 Select a file to view changes
               </div>
             )}
